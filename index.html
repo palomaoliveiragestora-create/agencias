@@ -295,15 +295,10 @@ let calM = new Date().getMonth();
 let allClients = [];
 let allKbPosts = [];
 let allKbClients = [];
-
-// ============================================================
-// TRELLO STATE
-// ============================================================
 let trelloApiKey = '';
 let trelloToken = '';
 let trelloBoards = [];
-let trelloSelectedBoards = [];
-let trelloPreviewData = [];
+
 
 const SB = {
   headers: {
@@ -530,7 +525,7 @@ function setSynced() { document.getElementById('sync-dot').className='sync-dot';
       <div class="sh">
         <div><div class="st">Carteira de Clientes</div><div class="ss" id="cl-sub">—</div></div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-trello btn-sm" onclick="openModal('modal-trello-import')">🔄 Importar do Trello</button>
+          <button class="btn btn-trello btn-sm" onclick="abrirModalTrello()">🔄 Importar do Trello</button>
           <button class="btn btn-primary btn-sm" onclick="openModal('modal-new-client')">+ Novo Cliente</button>
         </div>
       </div>
@@ -696,7 +691,7 @@ function setSynced() { document.getElementById('sync-dot').className='sync-dot';
                 <div class="ss-t">Seus Boards do Trello</div>
                 <div class="ss-s">Selecione os boards que deseja sincronizar com o sistema</div>
                 <div id="trello-boards-list"></div>
-                <button class="btn btn-trello btn-sm" style="margin-top:12px" onclick="openModal('modal-trello-import')">🔄 Importar agora</button>
+                <button class="btn btn-trello btn-sm" style="margin-top:12px" onclick="abrirModalTrello()">🔄 Importar agora</button>
               </div>
             </div>
           </div>
@@ -721,68 +716,60 @@ function setSynced() { document.getElementById('sync-dot').className='sync-dot';
   </div>
 </main>
 
-<!-- MODAL TRELLO IMPORT -->
+<!-- MODAL TRELLO IMPORT JSON -->
 <div class="mb" id="modal-trello-import"><div class="modal modal-lg">
   <div class="mh">
     <div style="display:flex;align-items:center;gap:10px">
       <div style="width:28px;height:28px;background:#0052CC;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px">🔄</div>
-      <div class="mt2">Importar do Trello</div>
+      <div class="mt2">Importar do Trello (JSON)</div>
     </div>
     <button class="mx" onclick="closeModal('modal-trello-import')">×</button>
   </div>
   <div class="mbdy">
-    <div id="trello-import-step1">
-      <div class="al al-info" style="margin-bottom:16px">
-        <span>ℹ️</span>
-        <span>Cada <strong>Board</strong> do Trello vira um <strong>Cliente</strong> no seu sistema. Os <strong>Cards</strong> de cada board viram <strong>Posts/Tarefas</strong>.</span>
-      </div>
 
-      <div id="trello-not-connected-msg" style="display:none">
-        <div class="al al-warn"><span>⚠️</span><span>Trello não conectado. Vá em <strong>Configurações → Trello</strong> para conectar primeiro.</span></div>
-        <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-trello-import');nav('configuracoes');setTimeout(()=>showSP('sp-trello',document.querySelector('.sni:nth-child(4)')),200)">Ir para Configurações</button>
-      </div>
-
-      <div id="trello-import-boards" style="display:none">
-        <div style="font-size:13px;font-weight:500;margin-bottom:12px">Selecione os boards para importar:</div>
-        <div id="trello-modal-boards-list"></div>
-        <div style="margin-top:16px">
-          <div class="fg">
-            <label class="fl">O que importar</label>
-            <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text2)">
-                <input type="checkbox" id="import-clients" checked style="accent-color:var(--trello)"> Criar clientes (um por board)
-              </label>
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text2)">
-                <input type="checkbox" id="import-tasks" checked style="accent-color:var(--trello)"> Importar cards como posts/tarefas
-              </label>
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text2)">
-                <input type="checkbox" id="import-comments" style="accent-color:var(--trello)"> Importar comentários como histórico
-              </label>
-            </div>
-          </div>
+    <div id="trello-json-step1">
+      <div class="al al-trello" style="margin-bottom:16px">
+        <span>📋</span>
+        <div>
+          <strong>Como exportar seu board do Trello:</strong><br>
+          1. Abra o board no Trello<br>
+          2. Clique nos <strong>3 pontinhos ···</strong> (canto superior direito)<br>
+          3. Clique em <strong>"Imprimir e exportar"</strong><br>
+          4. Clique em <strong>"Exportar como JSON"</strong><br>
+          5. Cole o conteúdo do arquivo abaixo
         </div>
       </div>
+
+      <div class="fg">
+        <label class="fl">Cole o JSON do Trello aqui</label>
+        <textarea class="fta" id="trello-json-input" style="min-height:180px;font-family:var(--mono);font-size:11px" placeholder='{"name": "Nome do Board", "cards": [...], "lists": [...], ...}'></textarea>
+      </div>
+
+      <div style="margin-top:4px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text2);margin-bottom:8px">
+          <input type="checkbox" id="json-import-tasks" checked style="accent-color:var(--trello)"> Importar cards como posts/tarefas
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text2)">
+          <input type="checkbox" id="json-import-comments" style="accent-color:var(--trello)"> Importar comentários como histórico
+        </label>
+      </div>
     </div>
 
-    <div id="trello-import-loading" style="display:none;text-align:center;padding:32px">
-      <div style="font-size:32px;margin-bottom:12px;animation:pulse 1s infinite">🔄</div>
-      <div style="font-size:14px;color:var(--text2)" id="trello-loading-msg">Conectando ao Trello...</div>
+    <div id="trello-json-loading" style="display:none;text-align:center;padding:32px">
+      <div style="font-size:32px;margin-bottom:12px;animation:pulse 1s infinite">⏳</div>
+      <div style="font-size:14px;color:var(--text2)">Importando dados...</div>
     </div>
 
-    <div id="trello-import-preview" style="display:none">
-      <div class="al al-trello" style="margin-bottom:14px"><span>👀</span><span id="trello-preview-summary"></span></div>
-      <div id="trello-preview-list"></div>
-    </div>
-
-    <div id="trello-import-success" style="display:none;text-align:center;padding:32px">
+    <div id="trello-json-success" style="display:none;text-align:center;padding:32px">
       <div style="font-size:40px;margin-bottom:12px">✅</div>
       <div style="font-size:16px;font-weight:600;margin-bottom:6px">Importação concluída!</div>
-      <div style="font-size:13px;color:var(--text2)" id="trello-success-msg"></div>
+      <div style="font-size:13px;color:var(--text2)" id="trello-json-success-msg"></div>
     </div>
+
   </div>
-  <div class="mf" id="trello-import-footer">
+  <div class="mf" id="trello-json-footer">
     <button class="btn btn-ghost" onclick="closeModal('modal-trello-import')">Cancelar</button>
-    <button class="btn btn-trello" id="trello-import-btn" onclick="executarImportacaoTrello()">🔄 Importar</button>
+    <button class="btn btn-trello" onclick="importarTrelloJSON()">🔄 Importar JSON</button>
   </div>
 </div></div>
 
@@ -890,336 +877,138 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 let pendingImg='';
 function handleImg(input){const f=input.files[0];if(!f)return;if(f.size>2*1024*1024){toast('Máximo 2MB','er');return;}const r=new FileReader();r.onload=e=>{pendingImg=e.target.result;document.getElementById('np-img-preview').innerHTML=`<img src="${pendingImg}" style="max-height:120px;border-radius:8px;border:1px solid var(--border2)">`};r.readAsDataURL(f);}
 
+
 // ================================================================
-// TRELLO INTEGRATION
+// TRELLO
 // ================================================================
 function loadTrelloCredentials(){
   trelloApiKey = localStorage.getItem('trello_api_key') || '';
   trelloToken = localStorage.getItem('trello_token') || '';
-  updateTrelloStatus();
 }
 
-function updateTrelloStatus(){
-  const dot = document.getElementById('trello-dot');
-  const text = document.getElementById('trello-status-text');
-  if(!dot || !text) return;
-  if(trelloApiKey && trelloToken){
-    dot.classList.add('connected');
-    text.textContent = 'Conectado ao Trello ✓';
-  } else {
-    dot.classList.remove('connected');
-    text.textContent = 'Não conectado';
-  }
+function abrirModalTrello(){
+  document.getElementById('modal-trello-import').classList.add('open');
+  document.getElementById('trello-json-input').value = '';
+  document.getElementById('trello-json-step1').style.display = 'block';
+  document.getElementById('trello-json-loading').style.display = 'none';
+  document.getElementById('trello-json-success').style.display = 'none';
 }
 
-async function trelloFetch(url){
-  // Try direct first (works if CORS is allowed)
-  const proxies = [
-    u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-    u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-    u => u  // direct as last resort
-  ];
-  for(const proxy of proxies){
-    try {
-      const r = await fetch(proxy(url));
-      if(r.ok) return r;
-    } catch(e){ continue; }
+async function importarTrelloJSON(){
+  const jsonText = document.getElementById('trello-json-input').value.trim();
+  if(!jsonText){ toast('Cole o JSON do Trello primeiro','er'); return; }
+  let data;
+  try { data = JSON.parse(jsonText); } catch(e){ toast('JSON inválido','er'); return; }
+
+  document.getElementById('trello-json-step1').style.display = 'none';
+  document.getElementById('trello-json-loading').style.display = 'block';
+
+  try {
+    const boardName = data.name || 'Board Importado';
+    const lists = data.lists || [];
+    const cards = (data.cards || []).filter(c => !c.closed);
+
+    const stageMap = {};
+    lists.forEach(l => {
+      const n = (l.name||'').toLowerCase();
+      if(n.includes('fazer')||n.includes('todo')||n.includes('ideia')||n.includes('backlog')) stageMap[l.id]='ideia';
+      else if(n.includes('fazendo')||n.includes('doing')||n.includes('producao')||n.includes('produção')) stageMap[l.id]='producao';
+      else if(n.includes('revis')) stageMap[l.id]='revisao';
+      else if(n.includes('aprovação')||n.includes('aprovacao')||n.includes('aguardando')||n.includes('waiting')) stageMap[l.id]='aguardando';
+      else if(n.includes('aprovado')||n.includes('done')||n.includes('feito')||n.includes('conclu')) stageMap[l.id]='aprovado';
+      else if(n.includes('public')) stageMap[l.id]='publicado';
+      else stageMap[l.id]='ideia';
+    });
+
+    const client = await SB.insert('clients',{
+      nome: boardName, seg:'Importado do Trello',
+      obs:`Importado do Trello em ${new Date().toLocaleDateString('pt-BR')}`,
+      status:'ativo', redes:'', resp:'',
+      process_log:[{stage:'cadastrado',time:new Date().toISOString()}]
+    });
+
+    let count = 0;
+    for(const card of cards){
+      try {
+        await SB.insert('posts',{
+          client_id: client.id,
+          titulo: card.name||'Card',
+          descricao: card.desc||'',
+          data: card.due ? card.due.split('T')[0] : null,
+          formato:'Post Feed',
+          stage: stageMap[card.idList]||'ideia',
+          url_anexo: card.shortUrl||'',
+          img_base64:''
+        });
+        count++;
+      } catch(e){}
+    }
+
+    document.getElementById('trello-json-loading').style.display = 'none';
+    document.getElementById('trello-json-success').style.display = 'block';
+    document.getElementById('trello-json-success-msg').textContent = `"${boardName}" importado com ${count} cards!`;
+    allClients=[];allKbPosts=[];
+    toast('Importado com sucesso!','ok');
+  } catch(e){
+    document.getElementById('trello-json-loading').style.display = 'none';
+    document.getElementById('trello-json-step1').style.display = 'block';
+    toast('Erro: '+e.message,'er');
   }
-  throw new Error('Não foi possível conectar ao Trello. Verifique sua conexão.');
 }
 
 async function conectarTrello(){
   const apiKey = document.getElementById('trello-api-key').value.trim();
   const token = document.getElementById('trello-token').value.trim();
-  if(!apiKey || !token){ toast('Preencha API Key e Token','er'); return; }
-
-  toast('Verificando credenciais...','');
+  if(!apiKey||!token){ toast('Preencha API Key e Token','er'); return; }
   try {
-    const r = await trelloFetch(`https://api.trello.com/1/members/me/boards?key=${apiKey}&token=${token}&fields=name,desc,closed`);
+    const r = await fetch(`https://api.trello.com/1/members/me/boards?key=${apiKey}&token=${token}&fields=name,desc,closed`);
     if(!r.ok) throw new Error('Credenciais inválidas');
     const boards = await r.json();
-    trelloApiKey = apiKey;
-    trelloToken = token;
-    trelloBoards = boards.filter(b => !b.closed);
-    localStorage.setItem('trello_api_key', apiKey);
-    localStorage.setItem('trello_token', token);
+    trelloApiKey=apiKey; trelloToken=token;
+    trelloBoards=boards.filter(b=>!b.closed);
+    localStorage.setItem('trello_api_key',apiKey);
+    localStorage.setItem('trello_token',token);
     updateTrelloStatus();
     renderTrelloBoardsList();
-    document.getElementById('trello-boards-section').style.display = 'block';
-    toast(`Conectado! ${trelloBoards.length} boards encontrados ✓`, 'ok');
-  } catch(e){
-    toast('Erro: ' + e.message, 'er');
-  }
+    document.getElementById('trello-boards-section').style.display='block';
+    toast(`Conectado! ${trelloBoards.length} boards ✓`,'ok');
+  } catch(e){ toast('Erro: '+e.message,'er'); }
 }
 
 function desconectarTrello(){
-  trelloApiKey = '';
-  trelloToken = '';
-  trelloBoards = [];
+  trelloApiKey='';trelloToken='';trelloBoards=[];
   localStorage.removeItem('trello_api_key');
   localStorage.removeItem('trello_token');
-  document.getElementById('trello-api-key').value = '';
-  document.getElementById('trello-token').value = '';
-  document.getElementById('trello-boards-section').style.display = 'none';
+  document.getElementById('trello-api-key').value='';
+  document.getElementById('trello-token').value='';
+  document.getElementById('trello-boards-section').style.display='none';
   updateTrelloStatus();
-  toast('Desconectado do Trello');
+  toast('Desconectado');
+}
+
+function updateTrelloStatus(){
+  const dot=document.getElementById('trello-dot');
+  const text=document.getElementById('trello-status-text');
+  if(!dot||!text) return;
+  if(trelloApiKey&&trelloToken){ dot.classList.add('connected'); text.textContent='Conectado ✓'; }
+  else { dot.classList.remove('connected'); text.textContent='Não conectado'; }
 }
 
 function renderTrelloBoardsList(){
-  const el = document.getElementById('trello-boards-list');
+  const el=document.getElementById('trello-boards-list');
   if(!el) return;
-  el.innerHTML = trelloBoards.map(b => `
-    <div class="trello-board-card" onclick="toggleTrelloBoard('${b.id}',this)" id="board-cfg-${b.id}">
-      <div class="trello-board-icon">📋</div>
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:500">${b.name}</div>
-        <div style="font-size:11px;color:var(--text3)">${b.desc||'Sem descrição'}</div>
-      </div>
-      <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">ID: ${b.id.slice(0,8)}...</div>
-    </div>
-  `).join('');
+  el.innerHTML=trelloBoards.map(b=>`<div class="trello-board-card"><div class="trello-board-icon">📋</div><div style="flex:1"><div style="font-size:13px;font-weight:500">${b.name}</div></div></div>`).join('');
 }
 
-function toggleTrelloBoard(id, el){
-  const idx = trelloSelectedBoards.indexOf(id);
-  if(idx > -1){ trelloSelectedBoards.splice(idx,1); el.classList.remove('selected'); }
-  else { trelloSelectedBoards.push(id); el.classList.add('selected'); }
-}
-
-async function openModal_TrelloImport(){
-  document.getElementById('modal-trello-import')?.classList.add('open');
-  // Reset state
-  document.getElementById('trello-import-step1').style.display = 'block';
-  document.getElementById('trello-import-loading').style.display = 'none';
-  document.getElementById('trello-import-preview').style.display = 'none';
-  document.getElementById('trello-import-success').style.display = 'none';
-  document.getElementById('trello-import-footer').style.display = 'flex';
-  document.getElementById('trello-import-btn').textContent = '🔄 Pré-visualizar';
-  document.getElementById('trello-import-btn').onclick = preVisualizarImportacao;
-
-  if(!trelloApiKey || !trelloToken){
-    document.getElementById('trello-not-connected-msg').style.display = 'block';
-    document.getElementById('trello-import-boards').style.display = 'none';
-    document.getElementById('trello-import-btn').style.display = 'none';
-  } else {
-    document.getElementById('trello-not-connected-msg').style.display = 'none';
-    document.getElementById('trello-import-boards').style.display = 'block';
-    document.getElementById('trello-import-btn').style.display = 'flex';
-    await carregarBoardsNoModal();
-  }
-}
-
-// Override openModal for trello
-const _origOpenModal = openModal;
-window.openModal = function(id){
-  if(id === 'modal-trello-import'){ openModal_TrelloImport(); return; }
-  document.getElementById(id)?.classList.add('open');
-}
-
-async function carregarBoardsNoModal(){
-  if(!trelloBoards.length){
-    try {
-      const r = await trelloFetch(`https://api.trello.com/1/members/me/boards?key=${trelloApiKey}&token=${trelloToken}&fields=name,desc,closed`);
-      const boards = await r.json();
-      trelloBoards = boards.filter(b => !b.closed);
-    } catch(e){ toast('Erro ao carregar boards','er'); return; }
-  }
-  const el = document.getElementById('trello-modal-boards-list');
-  el.innerHTML = trelloBoards.map(b => `
-    <div class="trello-board-card" onclick="toggleModalBoard('${b.id}',this)" id="board-modal-${b.id}">
-      <div class="trello-board-icon">📋</div>
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:500">${b.name}</div>
-        <div style="font-size:11px;color:var(--text3)">${b.desc||'Sem descrição'}</div>
-      </div>
-    </div>
-  `).join('');
-}
-
-let selectedModalBoards = [];
-function toggleModalBoard(id, el){
-  const idx = selectedModalBoards.indexOf(id);
-  if(idx > -1){ selectedModalBoards.splice(idx,1); el.classList.remove('selected'); }
-  else { selectedModalBoards.push(id); el.classList.add('selected'); }
-}
-
-async function preVisualizarImportacao(){
-  if(!selectedModalBoards.length){ toast('Selecione ao menos um board','er'); return; }
-  document.getElementById('trello-import-step1').style.display = 'none';
-  document.getElementById('trello-import-loading').style.display = 'block';
-  document.getElementById('trello-import-footer').style.display = 'none';
-
-  try {
-    trelloPreviewData = [];
-    for(const boardId of selectedModalBoards){
-      document.getElementById('trello-loading-msg').textContent = `Carregando board...`;
-      const board = trelloBoards.find(b => b.id === boardId);
-
-      // Fetch lists
-      const listsR = await trelloFetch(`https://api.trello.com/1/boards/${boardId}/lists?key=${trelloApiKey}&token=${trelloToken}&filter=open`);
-      const lists = await listsR.json();
-
-      // Fetch cards
-      const cardsR = await trelloFetch(`https://api.trello.com/1/boards/${boardId}/cards?key=${trelloApiKey}&token=${trelloToken}&fields=name,desc,due,idList,labels,url`);
-      const cards = await cardsR.json();
-
-      // Fetch members
-      const membersR = await trelloFetch(`https://api.trello.com/1/boards/${boardId}/members?key=${trelloApiKey}&token=${trelloToken}&fields=fullName,username`);
-      const members = await membersR.json();
-
-      trelloPreviewData.push({ board, lists, cards, members });
-    }
-
-    // Show preview
-    document.getElementById('trello-import-loading').style.display = 'none';
-    document.getElementById('trello-import-preview').style.display = 'block';
-    document.getElementById('trello-import-footer').style.display = 'flex';
-    document.getElementById('trello-import-btn').textContent = '✅ Confirmar e Importar';
-    document.getElementById('trello-import-btn').onclick = executarImportacaoTrello;
-
-    const totalCards = trelloPreviewData.reduce((s,d)=>s+d.cards.length,0);
-    document.getElementById('trello-preview-summary').textContent =
-      `${trelloPreviewData.length} cliente(s) e ${totalCards} tarefas/posts serão importados`;
-
-    document.getElementById('trello-preview-list').innerHTML = trelloPreviewData.map(d => `
-      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-          <div class="trello-board-icon" style="width:28px;height:28px;font-size:13px">📋</div>
-          <div>
-            <div style="font-size:13px;font-weight:600">${d.board.name}</div>
-            <div style="font-size:11px;color:var(--text3)">${d.cards.length} cards · ${d.lists.length} listas</div>
-          </div>
-          <span class="badge b-trello" style="margin-left:auto">→ Cliente</span>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px">
-          ${d.lists.slice(0,4).map(l=>`<span class="badge b-gr">${l.name} (${d.cards.filter(c=>c.idList===l.id).length})</span>`).join('')}
-          ${d.lists.length>4?`<span class="badge b-gr">+${d.lists.length-4} listas</span>`:''}
-        </div>
-      </div>
-    `).join('');
-
-  } catch(e){
-    document.getElementById('trello-import-loading').style.display = 'none';
-    document.getElementById('trello-import-step1').style.display = 'block';
-    document.getElementById('trello-import-footer').style.display = 'flex';
-    toast('Erro ao carregar dados do Trello: ' + e.message, 'er');
-  }
-}
-
-async function executarImportacaoTrello(){
-  if(!trelloPreviewData.length){ toast('Faça a pré-visualização primeiro','er'); return; }
-
-  const importClients = document.getElementById('import-clients')?.checked !== false;
-  const importTasks = document.getElementById('import-tasks')?.checked !== false;
-  const importComments = document.getElementById('import-comments')?.checked || false;
-
-  document.getElementById('trello-import-preview').style.display = 'none';
-  document.getElementById('trello-import-loading').style.display = 'block';
-  document.getElementById('trello-import-footer').style.display = 'none';
-
-  let clientsCreated = 0;
-  let tasksCreated = 0;
-  let errors = 0;
-
-  try {
-    for(const data of trelloPreviewData){
-      document.getElementById('trello-loading-msg').textContent = `Importando "${data.board.name}"...`;
-
-      let clientId = null;
-
-      if(importClients){
-        try {
-          // Map Trello list names to client status
-          const newClient = await SB.insert('clients', {
-            nome: data.board.name,
-            seg: 'Importado do Trello',
-            obs: data.board.desc || `Board importado do Trello em ${new Date().toLocaleDateString('pt-BR')}`,
-            status: 'ativo',
-            redes: '',
-            resp: data.members[0]?.fullName || '',
-            trello_board_id: data.board.id,
-            process_log: [{stage:'cadastrado',time:new Date().toISOString()}]
-          });
-          clientId = newClient?.id;
-          clientsCreated++;
-        } catch(e){ errors++; console.error('Error creating client:', e); }
-      }
-
-      if(importTasks && clientId){
-        // Map Trello list names to kanban stages
-        const stageMap = {};
-        data.lists.forEach(list => {
-          const lname = list.name.toLowerCase();
-          if(lname.includes('fazer') || lname.includes('todo') || lname.includes('ideia') || lname.includes('backlog')){
-            stageMap[list.id] = 'ideia';
-          } else if(lname.includes('fazendo') || lname.includes('doing') || lname.includes('progress') || lname.includes('produção') || lname.includes('producao')){
-            stageMap[list.id] = 'producao';
-          } else if(lname.includes('revisão') || lname.includes('revisao') || lname.includes('review')){
-            stageMap[list.id] = 'revisao';
-          } else if(lname.includes('aprovação') || lname.includes('aprovacao') || lname.includes('aprovando') || lname.includes('waiting')){
-            stageMap[list.id] = 'aguardando';
-          } else if(lname.includes('aprovado') || lname.includes('approved') || lname.includes('done') || lname.includes('feito')){
-            stageMap[list.id] = 'aprovado';
-          } else if(lname.includes('publicado') || lname.includes('published') || lname.includes('ao ar')){
-            stageMap[list.id] = 'publicado';
-          } else {
-            stageMap[list.id] = 'ideia';
-          }
-        });
-
-        // Import cards as posts
-        for(const card of data.cards){
-          try {
-            // Fetch comments if needed
-            let comments = '';
-            if(importComments){
-              try {
-                const commR = await trelloFetch(`https://api.trello.com/1/cards/${card.id}/actions?key=${trelloApiKey}&token=${trelloToken}&filter=commentCard`);
-                const comms = await commR.json();
-                if(comms.length){
-                  comments = comms.map(c=>`[${new Date(c.date).toLocaleDateString('pt-BR')} - ${c.memberCreator?.fullName||''}]: ${c.data?.text||''}`).join('\n\n');
-                }
-              } catch(e){}
-            }
-
-            await SB.insert('posts', {
-              client_id: clientId,
-              titulo: card.name,
-              descricao: [card.desc, comments].filter(Boolean).join('\n\n---\nComentários do Trello:\n') || '',
-              data: card.due ? card.due.split('T')[0] : null,
-              formato: 'Post Feed',
-              stage: stageMap[card.idList] || 'ideia',
-              url_anexo: card.url || '',
-              trello_card_id: card.id,
-              img_base64: ''
-            });
-            tasksCreated++;
-          } catch(e){ errors++; }
-        }
-      }
-
-      // Add import activity
-      try { await SB.insert('activities', { text: `Trello importado: ${data.board.name} (${data.cards.length} cards)`, agency_id: AGENCY_ID }); } catch(e){}
-    }
-
-    // Success
-    document.getElementById('trello-import-loading').style.display = 'none';
-    document.getElementById('trello-import-success').style.display = 'block';
-    document.getElementById('trello-success-msg').textContent =
-      `${clientsCreated} cliente(s) e ${tasksCreated} tarefa(s)/post(s) importados com sucesso!${errors?` (${errors} erro(s) ignorados)`:''}`;
-    document.getElementById('trello-import-footer').innerHTML =
-      `<button class="btn btn-primary" onclick="closeModal('modal-trello-import');nav('clientes')">Ver Clientes →</button>`;
-    document.getElementById('trello-import-footer').style.display = 'flex';
-
-    // Refresh
-    allClients = [];
-    allKbPosts = [];
-    selectedModalBoards = [];
-    trelloPreviewData = [];
-
-  } catch(e){
-    toast('Erro na importação: ' + e.message, 'er');
-    document.getElementById('trello-import-loading').style.display = 'none';
+function renderTrelloPanel(){
+  const k=document.getElementById('trello-api-key');
+  const t=document.getElementById('trello-token');
+  if(k)k.value=trelloApiKey;
+  if(t)t.value=trelloToken;
+  updateTrelloStatus();
+  if(trelloApiKey&&trelloToken&&trelloBoards.length){
+    document.getElementById('trello-boards-section').style.display='block';
+    renderTrelloBoardsList();
   }
 }
 
