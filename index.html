@@ -912,6 +912,22 @@ function updateTrelloStatus(){
   }
 }
 
+async function trelloFetch(url){
+  // Try direct first (works if CORS is allowed)
+  const proxies = [
+    u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+    u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+    u => u  // direct as last resort
+  ];
+  for(const proxy of proxies){
+    try {
+      const r = await fetch(proxy(url));
+      if(r.ok) return r;
+    } catch(e){ continue; }
+  }
+  throw new Error('Não foi possível conectar ao Trello. Verifique sua conexão.');
+}
+
 async function conectarTrello(){
   const apiKey = document.getElementById('trello-api-key').value.trim();
   const token = document.getElementById('trello-token').value.trim();
@@ -919,7 +935,7 @@ async function conectarTrello(){
 
   toast('Verificando credenciais...','');
   try {
-    const r = await fetch(`https://api.trello.com/1/members/me/boards?key=${apiKey}&token=${token}&fields=name,desc,closed`);
+    const r = await trelloFetch(`https://api.trello.com/1/members/me/boards?key=${apiKey}&token=${token}&fields=name,desc,closed`);
     if(!r.ok) throw new Error('Credenciais inválidas');
     const boards = await r.json();
     trelloApiKey = apiKey;
@@ -971,7 +987,7 @@ function toggleTrelloBoard(id, el){
 }
 
 async function openModal_TrelloImport(){
-  openModal('modal-trello-import');
+  document.getElementById('modal-trello-import')?.classList.add('open');
   // Reset state
   document.getElementById('trello-import-step1').style.display = 'block';
   document.getElementById('trello-import-loading').style.display = 'none';
@@ -995,7 +1011,7 @@ async function openModal_TrelloImport(){
 
 // Override openModal for trello
 const _origOpenModal = openModal;
-openModal = function(id){
+window.openModal = function(id){
   if(id === 'modal-trello-import'){ openModal_TrelloImport(); return; }
   document.getElementById(id)?.classList.add('open');
 }
@@ -1003,7 +1019,7 @@ openModal = function(id){
 async function carregarBoardsNoModal(){
   if(!trelloBoards.length){
     try {
-      const r = await fetch(`https://api.trello.com/1/members/me/boards?key=${trelloApiKey}&token=${trelloToken}&fields=name,desc,closed`);
+      const r = await trelloFetch(`https://api.trello.com/1/members/me/boards?key=${trelloApiKey}&token=${trelloToken}&fields=name,desc,closed`);
       const boards = await r.json();
       trelloBoards = boards.filter(b => !b.closed);
     } catch(e){ toast('Erro ao carregar boards','er'); return; }
@@ -1040,15 +1056,15 @@ async function preVisualizarImportacao(){
       const board = trelloBoards.find(b => b.id === boardId);
 
       // Fetch lists
-      const listsR = await fetch(`https://api.trello.com/1/boards/${boardId}/lists?key=${trelloApiKey}&token=${trelloToken}&filter=open`);
+      const listsR = await trelloFetch(`https://api.trello.com/1/boards/${boardId}/lists?key=${trelloApiKey}&token=${trelloToken}&filter=open`);
       const lists = await listsR.json();
 
       // Fetch cards
-      const cardsR = await fetch(`https://api.trello.com/1/boards/${boardId}/cards?key=${trelloApiKey}&token=${trelloToken}&fields=name,desc,due,idList,labels,url`);
+      const cardsR = await trelloFetch(`https://api.trello.com/1/boards/${boardId}/cards?key=${trelloApiKey}&token=${trelloToken}&fields=name,desc,due,idList,labels,url`);
       const cards = await cardsR.json();
 
       // Fetch members
-      const membersR = await fetch(`https://api.trello.com/1/boards/${boardId}/members?key=${trelloApiKey}&token=${trelloToken}&fields=fullName,username`);
+      const membersR = await trelloFetch(`https://api.trello.com/1/boards/${boardId}/members?key=${trelloApiKey}&token=${trelloToken}&fields=fullName,username`);
       const members = await membersR.json();
 
       trelloPreviewData.push({ board, lists, cards, members });
@@ -1158,7 +1174,7 @@ async function executarImportacaoTrello(){
             let comments = '';
             if(importComments){
               try {
-                const commR = await fetch(`https://api.trello.com/1/cards/${card.id}/actions?key=${trelloApiKey}&token=${trelloToken}&filter=commentCard`);
+                const commR = await trelloFetch(`https://api.trello.com/1/cards/${card.id}/actions?key=${trelloApiKey}&token=${trelloToken}&filter=commentCard`);
                 const comms = await commR.json();
                 if(comms.length){
                   comments = comms.map(c=>`[${new Date(c.date).toLocaleDateString('pt-BR')} - ${c.memberCreator?.fullName||''}]: ${c.data?.text||''}`).join('\n\n');
