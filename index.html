@@ -2929,7 +2929,7 @@ async function callClaude(prompt){
   try{
     // Gemini (AIza...)
     if(key.startsWith('AIza')){
-      var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key,{
+      var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+key,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
@@ -2989,7 +2989,7 @@ async function callClaude(prompt){
     if(!geminiKey || !geminiKey.startsWith('AIza')){
       throw new Error('Configure uma chave Gemini (AIza...) em Configurações → IA');
     }
-    var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+geminiKey,{
+    var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+geminiKey,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
