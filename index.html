@@ -868,6 +868,7 @@ async function gerarCalendarioIA(clientId){
     var postsNum=parseInt(client.posts_mes||8);
     var prompt='Gere exatamente '+postsNum+' ideias de posts para conta de '+(client.seg||'negócios')+' nas redes: '+(client.redes||'Instagram')+'. Objetivo: '+(client.objetivo||'Aumentar engajamento')+'. Para cada post retorne JSON com: titulo (max 60 chars), descricao (legenda pronta max 150 chars), formato (Carrossel/Reels/Post Feed/Stories), dia (numero 1-28), hashtags (array 5 hashtags). Retorne APENAS array JSON válido sem markdown.';
     var resp=await callClaude(prompt);
+    if(!resp) throw new Error('IA não respondeu. Verifique sua chave Gemini em Configurações → IA.');
     var json=JSON.parse(resp.replace(/```json?|```/g,'').trim());
     window._calIAposts=json.map(function(p){return Object.assign({},p,{client_id:clientId,stage:'ideia',approval_status:'pending'});});
     var fmtColors={'Carrossel':'#6366f1','Reels':'#3b82f6','Post Feed':'#10b981','Stories':'#f59e0b'};
@@ -879,7 +880,7 @@ async function gerarCalendarioIA(clientId){
     html+='</div>';
     document.getElementById('cal-ia-content').innerHTML=html;
     var btn=document.getElementById('cal-ia-save-btn');if(btn)btn.style.display='block';
-  }catch(e){document.getElementById('cal-ia-content').innerHTML='<div style="padding:14px;background:rgba(239,68,68,0.1);border-radius:10px;font-size:13px;color:#ef4444">Erro: '+e.message+'. Configure a chave Claude API em Configurações.</div>';}
+  }catch(e){document.getElementById('cal-ia-content').innerHTML='<div style="padding:14px;background:rgba(239,68,68,0.1);border-radius:10px;font-size:13px;color:#ef4444">Erro: '+e.message+'. Verifique sua chave Gemini em Configurações → IA.</div>';}
 }
 
 async function saveCalendarIA(){
@@ -2931,12 +2932,37 @@ async function callClaude(prompt){
       var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+key,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:1500}})
+        body:JSON.stringify({
+          contents:[{parts:[{text:prompt}]}],
+          generationConfig:{maxOutputTokens:8192,temperature:0.7},
+          safetySettings:[
+            {category:'HARM_CATEGORY_HARASSMENT',threshold:'BLOCK_NONE'},
+            {category:'HARM_CATEGORY_HATE_SPEECH',threshold:'BLOCK_NONE'},
+            {category:'HARM_CATEGORY_SEXUALLY_EXPLICIT',threshold:'BLOCK_NONE'},
+            {category:'HARM_CATEGORY_DANGEROUS_CONTENT',threshold:'BLOCK_NONE'}
+          ]
+        })
       });
+      if(!res.ok){
+        var errData=await res.json().catch(function(){return{};});
+        throw new Error('Gemini HTTP '+res.status+': '+(errData.error&&errData.error.message||'Erro desconhecido'));
+      }
       var data = await res.json();
       if(data.error) throw new Error(data.error.message||'Erro Gemini');
-      var txt=data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]?data.candidates[0].content.parts[0].text:null;
-      return txt||null;
+      // Handle blocked response
+      if(data.promptFeedback && data.promptFeedback.blockReason){
+        throw new Error('Conteúdo bloqueado pelo Gemini: '+data.promptFeedback.blockReason);
+      }
+      if(!data.candidates || !data.candidates.length){
+        throw new Error('Gemini não retornou resposta. Tente novamente.');
+      }
+      var cand = data.candidates[0];
+      if(cand.finishReason === 'SAFETY'){
+        throw new Error('Resposta bloqueada por filtro de segurança. Tente reformular.');
+      }
+      var txt = cand.content&&cand.content.parts&&cand.content.parts[0]?cand.content.parts[0].text:null;
+      if(!txt) throw new Error('Gemini retornou resposta vazia. Tente novamente.');
+      return txt;
     }
     // OpenAI (sk-proj... mas NÃO sk-ant que é Claude)
     if(key.startsWith('sk-') && !key.startsWith('sk-ant')){
@@ -4527,7 +4553,7 @@ async function gerarLinhaEditorialIA(){
   try{
     var prompt='Você é especialista em marketing digital para Instagram. Crie uma linha editorial de '+qtd+' posts para "'+client.nome+'" (segmento: '+(client.seg||'geral')+', objetivo: '+(client.objetivo||'engajamento')+') para '+mesNome+' '+ano+'.'+(tema?' Tema: '+tema+'.':'')+' Formatos: '+fmts.join(', ')+'. Distribua pelos dias disponíveis: '+availDates.slice(0,qtd).join(',')+'. Retorne APENAS array JSON com objetos contendo: titulo (max 60 chars), descricao (legenda pronta max 200 chars com emoji e CTA), formato, dia (número do dia), objetivo (engajamento/alcance/conversao/relacionamento). Sem markdown.';
     var resp=await callClaude(prompt);
-    if(!resp)throw new Error('API não respondeu. Configure API Key (OpenAI ou Claude) em Configurações.');
+    if(!resp)throw new Error('API não respondeu. Configure sua chave Gemini em Configurações → IA.');
     if(!resp){throw new Error('API não respondeu. Verifique sua chave em Configurações.');}
     if(!resp){throw new Error('API não respondeu');}
     var clean=resp.replace(/```json?|```/g,'').trim();
