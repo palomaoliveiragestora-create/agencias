@@ -290,6 +290,103 @@ tbody tr:hover .ra{opacity:1}
 .page.active{display:block;padding:24px;overflow-y:auto;overflow-x:hidden;min-height:calc(100vh - 56px)}
 #page-kanban.active{display:block;padding:20px 0 20px 24px;overflow-x:visible;overflow-y:auto;min-height:calc(100vh - 56px)}
 .jur-card:hover,.news-card:hover{transform:translateY(-2px)}
+
+/* ===================== MOBILE RESPONSIVE ===================== */
+@media(max-width:768px){
+
+  :root{ --sidebar:260px; }
+
+  /* Sidebar: oculta por padrão no mobile, slide-in quando .open */
+  #sidebar{
+    transform:translateX(-100%);
+    transition:transform .25s cubic-bezier(.4,0,.2,1);
+    display:flex !important;
+    z-index:500;
+    box-shadow:4px 0 24px rgba(0,0,0,.5);
+  }
+  #sidebar.open{ transform:translateX(0); }
+
+  /* Overlay escuro atrás da sidebar */
+  #sidebar-overlay{
+    display:none;position:fixed;inset:0;
+    background:rgba(0,0,0,.6);z-index:499;
+    backdrop-filter:blur(2px);
+  }
+  #sidebar-overlay.open{ display:block; }
+
+  /* Main ocupa tela toda */
+  #main{ margin-left:0 !important; }
+
+  /* Topbar: hambúrguer à esquerda */
+  #topbar{
+    padding:0 12px;
+    gap:8px;
+  }
+  #hamburger-btn{
+    display:flex;
+    align-items:center;justify-content:center;
+    width:36px;height:36px;
+    background:var(--bg3);
+    border:1px solid var(--border2);
+    border-radius:9px;
+    cursor:pointer;
+    flex-shrink:0;
+    color:var(--text);
+    font-size:18px;
+  }
+
+  /* Botão fechar dentro da sidebar */
+  #sidebar-close-btn{
+    display:flex !important;
+    position:absolute;top:12px;right:12px;
+    width:30px;height:30px;
+    align-items:center;justify-content:center;
+    background:var(--bg3);
+    border:1px solid var(--border2);
+    border-radius:8px;
+    cursor:pointer;
+    color:var(--text2);
+    font-size:16px;
+    z-index:10;
+  }
+
+  /* Pages: padding menor no mobile */
+  .page.active{ padding:16px 14px; }
+  #page-kanban.active{ padding:14px 0 14px 14px; }
+
+  /* Tabelas scrolláveis */
+  .tw{ overflow-x:auto; }
+
+  /* Grids adaptados */
+  .g4{ grid-template-columns:repeat(2,1fr) !important; }
+  .g3{ grid-template-columns:repeat(2,1fr) !important; }
+  .g2{ grid-template-columns:1fr !important; }
+  .fr,.fr3{ flex-direction:column; }
+
+  /* Topbar título menor */
+  #page-title{ font-size:14px; }
+
+  /* Botão + Novo Cliente menor */
+  #topbar-action{ font-size:12px; padding:6px 10px; }
+
+  /* Modais ocupam tela toda no mobile */
+  .modal{ border-radius:16px 16px 0 0; margin-top:auto; max-height:90vh; overflow-y:auto; }
+  .mb{ align-items:flex-end !important; padding:0 !important; }
+
+  /* Kanban scroll horizontal */
+  #kb-board{ 
+    overflow-x:auto;
+    padding-bottom:16px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .kb-col{ min-width:260px; }
+}
+
+/* Hambúrguer escondido no desktop */
+#hamburger-btn{ display:none; }
+#sidebar-close-btn{ display:none; }
+#sidebar-overlay{ display:none; }
+/* ============================================================= */
 </style>
 <meta name="theme-color" content="#c9845a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Le Essence"></head>
 <body>
@@ -363,14 +460,49 @@ const SB = {
 };
 
 async function initApp() {
-  try{
-    var s=localStorage.getItem('le_user');
-    currentUser=s?JSON.parse(s):{id:'default',nome:'Paloma Oliveira',funcao:'Gestora'};
-    if(!s)localStorage.setItem('le_user',JSON.stringify(currentUser));
-  }catch(e){
-    currentUser={id:'default',nome:'Paloma Oliveira',funcao:'Gestora'};
+  // Verifica se há sessão válida salva
+  try {
+    var s = localStorage.getItem('le_user');
+    if (s) {
+      var user = JSON.parse(s);
+      // Valida se o token não expirou (sessão válida por 8h)
+      var savedAt = parseInt(localStorage.getItem('le_user_time') || '0');
+      var now = Date.now();
+      var EIGHT_HOURS = 8 * 60 * 60 * 1000;
+      if (user && user.id && (now - savedAt) < EIGHT_HOURS) {
+        currentUser = user;
+        showApp();
+        return;
+      }
+    }
+  } catch(e) {}
+  // Sem sessão válida → redireciona para login
+  window.location.href = 'login.html';
+}
+
+async function loginComSenha(email, senha) {
+  if (!email || !senha) { toast('Preencha email e senha','er'); return; }
+  try {
+    var members = await SB.get('members', '&email=eq.' + encodeURIComponent(email.trim().toLowerCase()));
+    if (!members || members.length === 0) {
+      toast('Usuário não encontrado','er'); return;
+    }
+    var member = members[0];
+    var senhaHash = member.senha || '';
+    // Verifica senha (armazenada como btoa)
+    var senhaInput = btoa(senha);
+    if (senhaHash !== senhaInput) {
+      toast('Senha incorreta','er'); return;
+    }
+    // Login OK — salva sessão
+    currentUser = { id: member.id, nome: member.nome, funcao: member.funcao || 'social', cargo: member.funcao || 'social' };
+    localStorage.setItem('le_user', JSON.stringify(currentUser));
+    localStorage.setItem('le_user_time', Date.now().toString());
+    window.location.href = 'index.html';
+  } catch(e) {
+    console.error('Login error:', e);
+    toast('Erro ao verificar login','er');
   }
-  showApp();
 }
 
 
@@ -456,12 +588,12 @@ function switchTrendsTab(tab,el){
   }catch(e){console.error('switchTrendsTab error:',e);}
 }
 
-function refreshCurrentTrendsTab(){
+async function refreshCurrentTrendsTab(){
   var jt=document.getElementById('trends-tab-juridico');
   if(jt&&jt.style.display!=='none'){try{loadJuridicoNews(true);}catch(e){}}
   else{try{loadTrendsPage();}catch(e){}}
 }
-function _refreshCurrentTrendsTab_orig(){
+async function _refreshCurrentTrendsTab_orig(){
   var jt=document.getElementById('trends-tab-juridico');
   if(jt&&jt.style.display!=='none') loadJuridicoNews(true);
   else loadTrendsPage();
@@ -489,7 +621,7 @@ async function loadGoogleTrends(){
   }catch(e){el.innerHTML=fallbackGT();}
 }
 
-function fallbackGT(){
+async function fallbackGT(){
   return ['IA2026','ReformaTrabalhista','FGTSDigital','PIXParcelado','BlackFriday','MarketingDigital','Empreendedorismo','RendaExtra','ChatGPT','TikTokShop'].map(function(t){return '<span onclick="navigator.clipboard.writeText(\"#'+t+'\");toast(\"Copiado!\",\"ok\")" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;background:rgba(234,67,53,0.12);border:1px solid rgba(234,67,53,0.2);color:#ea4335;margin:3px">🔍 #'+t+'</span>';}).join('');
 }
 
@@ -694,7 +826,7 @@ function _openPostComposer(data){
       window._cachedClients=cls;
       var sel=document.getElementById('pc-client');
       if(sel){cls.forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent=c.nome;sel.appendChild(o);});}
-    });
+    }).catch(function(e){console.error('[AgênciaOS]',e);});
   }
   modal.innerHTML='<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:20px;width:100%;max-width:660px;margin:0 auto"><div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:15px;font-weight:800">✦ Criar post a partir da notícia</div><div style="font-size:11px;color:var(--text2)">A IA já preencheu — edite como quiser</div></div><button onclick="document.getElementById(\'modal-post-composer\').style.display=\'none\';document.body.style.overflow=\'\'" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:22px">×</button></div><div style="padding:18px"><div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:'+data.color+'08;border:1px solid '+data.color+'22;border-radius:10px;margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:'+data.color+'">📰 '+data.source+'</div><div style="font-size:11px;color:var(--text);flex:1">'+data.title.slice(0,60)+'...</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px"><div><label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:block;margin-bottom:4px">Cliente</label><select id="pc-client" class="fs">'+clientOpts+'</select></div><div><label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:block;margin-bottom:4px">Formato</label><select id="pc-format" class="fs"><option>Carrossel</option><option>Post Feed</option><option>Reels</option><option>Stories</option></select></div></div><div style="margin-bottom:10px"><label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:block;margin-bottom:4px">Título</label><input id="pc-title" class="fi" value="'+data.title.replace(/"/g,"'").slice(0,100)+'"></div><div style="margin-bottom:14px"><label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:block;margin-bottom:4px">Legenda / Briefing</label><textarea id="pc-desc" class="fta" style="min-height:90px">'+data.desc+'</textarea></div>'+'<div style="margin-bottom:10px"><label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);display:block;margin-bottom:5px">Data do post</label>'+'<input type="date" class="fi" id="pc-data"></div>'+'<div style="display:flex;gap:8px;padding-top:14px;border-top:1px solid var(--border)"><button onclick="_saveComposerPost()" style="flex:1;padding:11px;border-radius:10px;background:var(--accent);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">→ Adicionar ao Kanban</button><button onclick="document.getElementById(\'modal-post-composer\').style.display=\'none\';document.body.style.overflow=\'\'" style="padding:11px 16px;border-radius:10px;background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--font)">Cancelar</button></div></div></div>';
   modal.style.display='flex';document.body.style.overflow='hidden';
@@ -967,7 +1099,7 @@ function renderChecklist(clientId){
   el.innerHTML=html;
 }
 
-function toggleChecklist(clientId,idx,checked){
+async function toggleChecklist(clientId,idx,checked){
   var key='ck_'+clientId+'_'+new Date().getFullYear()+'_'+new Date().getMonth();
   var saved={};try{saved=JSON.parse(localStorage.getItem(key)||'{}');}catch(e){}
   saved[idx]=checked;try{localStorage.setItem(key,JSON.stringify(saved));}catch(e){}
@@ -1003,7 +1135,7 @@ function gerarContratoDigital(clientId){
     var win=window.open('','_blank','width=900,height=700');
     if(win){win.document.write(html);win.document.close();setTimeout(function(){win.print();},500);}
     toast('Contrato aberto — Ctrl+P para PDF','ok');
-  });
+  }).catch(function(e){console.error('[AgênciaOS]',e);});
 }
 
 // ── NPS ───────────────────────────────────────────────────────
@@ -1025,7 +1157,7 @@ function addNotification(type,text){
 }
 function updateNotifBadge(){
   var unread=_notifications.filter(function(n){return !n.read;}).length;
-  var badge=document.getElementById('noti-dot');
+  var badge=document.getElementById('notif-dot');
   if(badge){badge.style.display=unread>0?'block':'none';}
 }
 function loadNotificationsLocal(){
@@ -1066,10 +1198,10 @@ function showPostPreview(postId){
       modal.innerHTML='<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:20px;width:100%;max-width:400px"><div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between"><div style="font-size:15px;font-weight:800">👁️ Preview do Post</div><button onclick="document.getElementById(\'modal-post-preview\').style.display=\'none\'" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:20px">×</button></div><div style="padding:14px;border-bottom:1px solid var(--border);display:flex;gap:6px"><button onclick="updatePreview(\'instagram\')" id="pvt-instagram" style="padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--accent);background:rgba(29,110,245,0.15);color:var(--accent);font-family:var(--font)">📸 Instagram</button><button onclick="updatePreview(\'linkedin\')" id="pvt-linkedin" style="padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:var(--font)">💼 LinkedIn</button></div><div id="preview-content" style="padding:20px">'+renderPostPreview(post,'instagram')+'</div></div>';
       modal.style.display='flex';
     });
-  });
+  }).catch(function(e){console.error('[AgênciaOS]',e);});
 }
 
-function updatePreview(network){
+async function updatePreview(network){
   var c=document.getElementById('preview-content');
   if(c&&window._previewPost)c.innerHTML=renderPostPreview(window._previewPost,network);
   document.querySelectorAll('[id^="pvt-"]').forEach(function(btn){btn.style.borderColor='var(--border)';btn.style.background='transparent';btn.style.color='var(--text2)';});
@@ -1111,7 +1243,7 @@ function renderMediaModal(clientId,modal){
   modal.innerHTML='<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:20px;width:100%;max-width:680px;margin:0 auto"><div style="padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between"><div style="font-size:15px;font-weight:800">🗂️ Banco de Mídia</div><button onclick="document.getElementById(\'modal-media-bank\').style.display=\'none\'" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:20px">×</button></div><div style="padding:20px"><div onclick="document.getElementById(\'media-upload-'+clientId+'\').click()" style="border:2px dashed var(--border2);border-radius:12px;padding:24px;text-align:center;cursor:pointer;margin-bottom:18px"><div style="font-size:28px;margin-bottom:6px">📁</div><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Clique para fazer upload</div><div style="font-size:11px;color:var(--text3)">Imagens, vídeos, PDFs</div><input type="file" id="media-upload-'+clientId+'" multiple accept="image/*,video/*,.pdf" style="display:none" onchange="handleMediaUpload(event,\''+clientId+'\')" ></div>'+(files.length?'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px">'+files.map(function(f,i){var isImg=f.type&&f.type.startsWith('image');return '<div style="border-radius:10px;border:1px solid var(--border);overflow:hidden;cursor:pointer">'+(isImg&&f.data?'<img src="'+f.data+'" style="width:100%;aspect-ratio:1;object-fit:cover">':'<div style="width:100%;aspect-ratio:1;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px">'+(f.type&&f.type.includes('video')?'🎬':'📄')+'</div>')+'<div style="padding:6px 8px"><div style="font-size:10px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+f.name+'</div></div></div>';}).join('')+'</div>':'<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Nenhum arquivo. Faça upload acima.</div>')+'</div></div>';
 }
 
-function handleMediaUpload(event,clientId){
+async function handleMediaUpload(event,clientId){
   var files=Array.from(event.target.files);
   var saved=_mediaBank[clientId]||[];
   var pending=files.length;
@@ -1133,7 +1265,38 @@ function handleMediaUpload(event,clientId){
 }
 
 
-function logout() { localStorage.removeItem('le_user'); window.location.href = 'login.html'; }
+async function logout() { localStorage.removeItem('le_user'); localStorage.removeItem('le_user_time'); window.location.href = 'login.html'; }
+
+// ── MOBILE SIDEBAR ───────────────────────────────────────────
+function toggleSidebar(){
+  var sb = document.getElementById('sidebar');
+  var ov = document.getElementById('sidebar-overlay');
+  if(sb.classList.contains('open')){
+    closeSidebar();
+  } else {
+    sb.classList.add('open');
+    ov.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+}
+function closeSidebar(){
+  var sb = document.getElementById('sidebar');
+  var ov = document.getElementById('sidebar-overlay');
+  sb.classList.remove('open');
+  ov.classList.remove('open');
+  document.body.style.overflow = '';
+}
+// Auto-close sidebar on nav click (mobile)
+(function(){
+  document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('.nav-item').forEach(function(el){
+      el.addEventListener('click', function(){
+        if(window.innerWidth <= 768) closeSidebar();
+      });
+    });
+  });
+})();
+// ─────────────────────────────────────────────────────────────
 
 async function dbGet(table, extra = '') { return SB.get(table, extra); }
 async function dbInsert(table, obj) { setSyncing(); const r = await SB.insert(table, obj); setSynced(); return r; }
@@ -1190,7 +1353,12 @@ function setSynced() { document.getElementById('sync-dot').className='sync-dot';
 </div>
 
 <!-- SIDEBAR -->
+<!-- Mobile overlay -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
 <aside id="sidebar">
+  <!-- Mobile close button -->
+  <button id="sidebar-close-btn" onclick="closeSidebar()">×</button>
   <div class="logo" onclick="nav('dashboard')" data-page="dashboard">
     <div class="logo-icon" id="logo-icon" style="background:linear-gradient(135deg,#c9845a,#d4a855);font-family:'Playfair Display',serif;font-size:14px;letter-spacing:.5px">LE</div>
     <div><div class="logo-name" id="logo-name" style="font-family:'Playfair Display',serif;font-weight:600;letter-spacing:.3px">Le Essence</div><div class="logo-sub" style="letter-spacing:.5px;font-size:10px">Social Media Agency</div></div>
@@ -1224,7 +1392,7 @@ function setSynced() { document.getElementById('sync-dot').className='sync-dot';
     <div class="nav-sec">Cliente</div>
     <div class="nav-item" onclick="window.open('portal.html','_blank')" id="nav-portal-item"><svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 1h6v14H8M5 5L2 8l3 3M2 8h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Portal do Cliente<span id="badge-portal" style="display:none;background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:6px">!</span></div>
     <div class="nav-sec">Sistema</div>
-    <div class="nav-item" onclick="nav('configuracoes')"><svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Configurações</div>
+    <div class="nav-item" data-page="configuracoes" onclick="nav('configuracoes')"><svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Configurações</div>
   </nav>
   <div class="sidebar-footer">
     <div class="sf-row">
@@ -1240,6 +1408,7 @@ function setSynced() { document.getElementById('sync-dot').className='sync-dot';
 <!-- MAIN -->
 <main id="main">
   <header id="topbar">
+    <button id="hamburger-btn" onclick="toggleSidebar()" title="Menu">☰</button>
     <div id="page-title">Dashboard</div>
     <div class="topbar-right">
       <button onclick="openGlobalSearch()" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:9px;border:1px solid var(--border2);background:var(--bg3);color:var(--text3);font-size:12px;cursor:pointer;font-family:var(--font)" title="Ctrl+K">🔍 <span style="font-size:10px;opacity:.6">Ctrl+K</span></button>
@@ -2025,7 +2194,7 @@ function toast(msg,type=''){const t=document.getElementById('toast');t.textConte
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 let pendingImg='';
-function handleImg(input){const f=input.files[0];if(!f)return;if(f.size>2*1024*1024){toast('Máximo 2MB','er');return;}const r=new FileReader();r.onload=e=>{pendingImg=e.target.result;document.getElementById('np-img-preview').innerHTML=`<img src="${pendingImg}" style="max-height:120px;border-radius:8px;border:1px solid var(--border2)">`};r.readAsDataURL(f);}
+async function handleImg(input){const f=input.files[0];if(!f)return;if(f.size>2*1024*1024){toast('Máximo 2MB','er');return;}const r=new FileReader();r.onload=e=>{pendingImg=e.target.result;document.getElementById('np-img-preview').innerHTML=`<img src="${pendingImg}" style="max-height:120px;border-radius:8px;border:1px solid var(--border2)">`};r.readAsDataURL(f);}
 
 
 
@@ -2068,7 +2237,7 @@ async function openPostDetail(postId){
   openModal('modal-post-detail');
 }
 
-function handlePdImg(input){
+async function handlePdImg(input){
   const f=input.files[0];
   if(!f)return;
   if(f.size>2*1024*1024){toast('Máximo 2MB','er');return;}
@@ -2113,7 +2282,7 @@ async function deleteCurrentPost(){
 // ================================================================
 // PORTAL DO CLIENTE
 // ================================================================
-function copyPortalLink(clientId){
+async function copyPortalLink(clientId){
   const base = window.location.href.replace('index.html','').replace(/\?.*$/,'');
   const link = base + 'portal.html';
   navigator.clipboard.writeText(link).then(()=>{
@@ -2252,13 +2421,13 @@ function updateTrelloStatus(){
   else { dot.classList.remove('connected'); text.textContent='Não conectado'; }
 }
 
-function renderTrelloBoardsList(){
+async function renderTrelloBoardsList(){
   const el=document.getElementById('trello-boards-list');
   if(!el) return;
   el.innerHTML=trelloBoards.map(b=>`<div class="trello-board-card"><div class="trello-board-icon">📋</div><div style="flex:1"><div style="font-size:13px;font-weight:500">${b.name}</div></div></div>`).join('');
 }
 
-function renderTrelloPanel(){
+async function renderTrelloPanel(){
   const k=document.getElementById('trello-api-key');
   const t=document.getElementById('trello-token');
   if(k)k.value=trelloApiKey;
@@ -2444,6 +2613,16 @@ function loadTrendsPage(){
 // NAV
 // ================================================================
 function nav(page){
+  // Block access to restricted pages
+  var roleObj = USER_ROLES[getCurrentRole()]||USER_ROLES.gestora;
+  if(page==='configuracoes' && !roleObj.canConfig){
+    toast('Acesso restrito — fale com a Gestora','er'); return;
+  }
+  if(page==='financeiro' && !roleObj.canFinanceiro){
+    toast('Acesso restrito','er'); return;
+  }
+  // Close sidebar on mobile when navigating
+  if(window.innerWidth <= 768) closeSidebar();
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const pageEl=document.getElementById('page-'+page);
@@ -2599,7 +2778,7 @@ async function delLead(id){if(!confirm('Remover?'))return;await dbDelete('leads'
 // CLIENTS
 // ================================================================
 let clFilter='todos';
-function setFilter(f,btn){clFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderClientsFromCache();}
+async function setFilter(f,btn){clFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderClientsFromCache();}
 async function renderClients(){allClients=await dbGet('clients');renderClientsFromCache();}
 function renderClientsFromCache(){
   const q=(document.getElementById('cl-search').value||'').toLowerCase();
@@ -2679,7 +2858,7 @@ async function openClientDetail(id){
       var iaEl=document.getElementById('cd-ia');
       if(iaEl)iaEl.innerHTML='<div style="text-align:center;padding:30px"><div style="font-size:32px;margin-bottom:10px">✦</div><div style="font-size:14px;font-weight:700;margin-bottom:6px">Estratégia IA — '+c.nome+'</div><div style="font-size:12px;color:var(--text2);margin-bottom:16px">Prompts baseados no algoritmo do Instagram 2026</div><button onclick="gerarEstrategiaIA(this.dataset.id)" data-id="'+_cid+'" style="padding:11px 22px;border-radius:10px;background:var(--accent);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">✦ Abrir Estratégia IA</button><div style="margin-top:10px"><button onclick="openAnaliseConcorrente(this.dataset.id)" data-id="'+_cid+'" style="padding:8px 16px;border-radius:10px;background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">🔍 Analisar concorrente</button></div></div>';
     }catch(e){}
-  });
+  }).catch(function(e){console.error('[AgênciaOS]',e);});
 }
 
 
@@ -2723,13 +2902,13 @@ async function buildClientTabs(c){
 }
 
 
-function switchTab(id,el){document.querySelectorAll('.tp').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.ti').forEach(t=>t.classList.remove('active'));document.getElementById(id).classList.add('active');el.classList.add('active');}
+async function switchTab(id,el){document.querySelectorAll('.tp').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.ti').forEach(t=>t.classList.remove('active'));document.getElementById(id).classList.add('active');el.classList.add('active');}
 async function changeClientStatus(id,val){await dbUpdate('clients',id,{status:val});}
 async function saveMetrics(id){await dbUpdate('clients',id,{metrics:{seguidores:document.getElementById('m-seg').value,alcance:document.getElementById('m-alc').value,engajamento:document.getElementById('m-eng').value}});toast('Salvo!','ok');}
-async function addHist(id){const input=document.getElementById('hist-in');const text=input.value.trim();if(!text)return;const r=await fetch(`${SB_URL}/rest/v1/clients?id=eq.${id}`,{headers:SB.headers});const data=await r.json();const c=Array.isArray(data)?data[0]:data;const hist=c?.historico||[];hist.unshift({text,date:new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})});await dbUpdate('clients',id,{historico:hist});input.value='';openClientDetail(id);toast('Registrado!','ok');}
+async function addHist(id){const input=document.getElementById('hist-in');if(!input){toast('Erro ao localizar campo','er');return;}const text=input.value.trim();if(!text)return;try{const r=await fetch(`${SB_URL}/rest/v1/clients?id=eq.${id}`,{headers:SB.headers});const data=await r.json();const c=Array.isArray(data)?data[0]:data;const hist=c?.historico||[];hist.unshift({text,date:new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})});await dbUpdate('clients',id,{historico:hist});input.value='';openClientDetail(id);toast('Registrado!','ok');}catch(e){toast('Erro ao registrar','er');console.error(e);}}
 async function saveEst(id){await dbUpdate('clients',id,{objetivo:document.getElementById('est-obj').value,publico:document.getElementById('est-pub').value,tom:document.getElementById('est-tom').value,estrategia:document.getElementById('est-notas').value});toast('Salvo!','ok');}
-function openPostForClient(id){populateSelects();document.getElementById('np-client').value=id;openModal('modal-new-post');}
-function openCobFor(id,ticket){populateSelects();document.getElementById('cob-client').value=id;document.getElementById('cob-val').value=ticket;openModal('modal-asaas-cob');}
+async function openPostForClient(id){populateSelects();document.getElementById('np-client').value=id;openModal('modal-new-post');}
+async function openCobFor(id,ticket){populateSelects();document.getElementById('cob-client').value=id;document.getElementById('cob-val').value=ticket;openModal('modal-asaas-cob');}
 async function advanceProcess(clientId,stage,label){const r=await fetch(`${SB_URL}/rest/v1/clients?id=eq.${clientId}`,{headers:SB.headers});const data=await r.json();const c=Array.isArray(data)?data[0]:data;const pl=c?.process_log||[];if(!pl.find(l=>l.stage===stage)){pl.push({stage,time:new Date().toISOString()});await dbUpdate('clients',clientId,{process_log:pl,process_stage:stage});await addActivity(label);openClientDetail(clientId);toast(`${label} ✓`,'ok');}}
 async function resetProcess(clientId){if(!confirm('Resetar?'))return;await dbUpdate('clients',clientId,{process_log:[{stage:'cadastrado',time:new Date().toISOString()}],process_stage:'cadastrado'});openClientDetail(clientId);}
 
@@ -2863,7 +3042,7 @@ async function renderKanban(){
   if(kbMemSel&&kbMemSel.options.length<=1){
     dbGet('members').then(function(mems){
       mems.forEach(function(m){var o=document.createElement('option');o.value=m.nome;o.textContent=m.nome;kbMemSel.appendChild(o);});
-    });
+    }).catch(function(e){console.error('[AgênciaOS]',e);});
   }
 
   KB_COLS.forEach(col=>{
@@ -2953,7 +3132,7 @@ function kbDragEnd(e){e.currentTarget.style.opacity='1';e.currentTarget.style.cu
 // CALENDAR
 // ================================================================
 const MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-function changeMonth(d){calM+=d;if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;}renderCalendar();}
+async function changeMonth(d){calM+=d;if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;}renderCalendar();}
 async function renderCalendar(){
   document.getElementById('cal-lbl').textContent=MONTHS[calM]+' '+calY;
   var f=document.getElementById('cal-filter').value;
@@ -3080,10 +3259,10 @@ function renderApPosts(posts,clientId){
   document.getElementById('ap-all-btn').style.display=allDone?'none':'block';
   if(!posts.length){container.innerHTML='<div style="text-align:center;padding:48px;color:#555a6e"><p>Nenhum post aguardando.</p></div>';return;}
   container.innerHTML=posts.map(p=>{const badge=p.approval_status==='approved'?'<span style="background:rgba(34,197,94,.15);color:#4ade80;padding:4px 12px;border-radius:20px;font-size:12px">✓ Aprovado</span>':p.approval_status==='revision'?'<span style="background:rgba(239,68,68,.15);color:#f87171;padding:4px 12px;border-radius:20px;font-size:12px">✎ Revisão</span>':'<span style="background:rgba(245,158,11,.15);color:#fbbf24;padding:4px 12px;border-radius:20px;font-size:12px">⏳ Aguardando</span>';return `<div class="ap-post"><div style="padding:16px 18px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div><div style="font-size:14px;font-weight:500;color:#f0f1f3">${p.titulo}</div><div style="font-size:12px;color:#555a6e;margin-top:3px">${p.data||'—'} · ${p.formato||'Post'}</div></div>${badge}</div><div style="padding:0 18px 14px">${p.img_base64?`<img src="${p.img_base64}" style="width:100%;max-height:240px;object-fit:cover;border-radius:10px;margin-bottom:12px">`:''} ${p.descricao?`<div style="font-size:13px;color:#8b8fa8;line-height:1.7;white-space:pre-wrap">${p.descricao}</div>`:''}</div>${!p.approval_status?`<div style="display:flex;gap:10px;padding:12px 18px;border-top:1px solid rgba(255,255,255,.07)"><button class="ap-btn-ok" onclick="submitAp('${clientId}','${p.id}','approved',null)">✓ Aprovar</button><button class="ap-btn-rv" onclick="toggleApRev('${p.id}')">✎ Revisão</button></div><div id="apra-${p.id}" style="display:none;padding:10px 18px 14px;border-top:1px solid rgba(255,255,255,.07)"><textarea class="ap-rev-ta" id="aprt-${p.id}" placeholder="Descreva a alteração..."></textarea><button class="ap-rev-send" onclick="submitAp('${clientId}','${p.id}','revision',document.getElementById('aprt-${p.id}').value)">Enviar</button></div>`:''}`;}).join('');}
-function toggleApRev(postId){const a=document.getElementById('apra-'+postId);if(a)a.style.display=a.style.display==='none'?'block':'none';}
+async function toggleApRev(postId){const a=document.getElementById('apra-'+postId);if(a)a.style.display=a.style.display==='none'?'block':'none';}
 async function submitAp(clientId,postId,status,comment){await dbUpdate('posts',postId,{approval_status:status,approval_comment:comment||'',stage:status==='approved'?'aprovado':'revisao'});const pr=await fetch(`${SB_URL}/rest/v1/posts?client_id=eq.${clientId}&agency_id=eq.${AGENCY_ID}&stage=in.(aguardando,aprovado,revisao)`,{headers:SB.headers});const posts=await pr.json()||[];renderApPosts(posts,clientId);updateApProgress(posts);toast(status==='approved'?'Post aprovado ✓':'Revisão enviada');}
 async function approveAll(){if(!apClientId)return;const pr=await fetch(`${SB_URL}/rest/v1/posts?client_id=eq.${apClientId}&agency_id=eq.${AGENCY_ID}&stage=eq.aguardando`,{headers:SB.headers});const posts=await pr.json()||[];await Promise.all(posts.map(p=>dbUpdate('posts',p.id,{approval_status:'approved',stage:'aprovado'})));const pr2=await fetch(`${SB_URL}/rest/v1/posts?client_id=eq.${apClientId}&agency_id=eq.${AGENCY_ID}&stage=in.(aguardando,aprovado)`,{headers:SB.headers});const all=await pr2.json()||[];renderApPosts(all,apClientId);updateApProgress(all);toast('Todos aprovados ✓','ok');}
-function updateApProgress(posts){const total=posts.length;const done=posts.filter(p=>p.approval_status).length;const pct=total?Math.round(done/total*100):0;document.getElementById('ap-prog-lbl').textContent=`${done} de ${total} posts`;document.getElementById('ap-prog-pct').textContent=pct+'%';document.getElementById('ap-prog-fill').style.width=pct+'%';if(done===total&&total>0){document.getElementById('ap-done-banner').style.display='block';document.getElementById('ap-all-btn').style.display='none';}}
+async function updateApProgress(posts){const total=posts.length;const done=posts.filter(p=>p.approval_status).length;const pct=total?Math.round(done/total*100):0;document.getElementById('ap-prog-lbl').textContent=`${done} de ${total} posts`;document.getElementById('ap-prog-pct').textContent=pct+'%';document.getElementById('ap-prog-fill').style.width=pct+'%';if(done===total&&total>0){document.getElementById('ap-done-banner').style.display='block';document.getElementById('ap-all-btn').style.display='none';}}
 function copyLink(link){navigator.clipboard.writeText(link).then(()=>toast('Link copiado!','ok')).catch(()=>toast('Erro ao copiar','er'));}
 async function checkApRoute(){const params=new URLSearchParams(window.location.search);const clientId=params.get('ap');if(clientId){await openAp(clientId,'dashboard');}}
 
@@ -3149,7 +3328,7 @@ document.addEventListener('click',e=>{const dd=document.getElementById('notif-dd
 // ================================================================
 // SETTINGS
 // ================================================================
-function showSP(id,el){if(id==='sp-ia'){setTimeout(loadApiKeyConfig,100);}document.querySelectorAll('.sp').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.sni').forEach(n=>n.classList.remove('active'));document.getElementById(id).classList.add('active');if(el)el.classList.add('active');if(id==='sp-usuarios')renderUsersPanel();if(id==='sp-pacotes')renderPackagesPanel();if(id==='sp-trello')renderTrelloPanel();}
+async function showSP(id,el){if(id==='sp-ia'){setTimeout(loadApiKeyConfig,100);}document.querySelectorAll('.sp').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.sni').forEach(n=>n.classList.remove('active'));document.getElementById(id).classList.add('active');if(el)el.classList.add('active');if(id==='sp-usuarios')renderUsersPanel();if(id==='sp-pacotes')renderPackagesPanel();if(id==='sp-trello')renderTrelloPanel();}
 async function loadConfigPanel(){
   const cfg=await getConfig();
   renderUsersPanel();
@@ -3182,7 +3361,7 @@ async function renderUsersPanel(){const members=await dbGet('members');const TC=
     </div>
     <div style="display:flex;gap:6px">
       <button onclick="editarMembro('${m.id}')" style="padding:5px 12px;border-radius:8px;background:var(--bg4);border:1px solid var(--border2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font)">✏️ Editar</button>
-      <button onclick="resetarSenha('${m.id}','${m.nome}')" style="padding:5px 12px;border-radius:8px;background:rgba(201,132,90,0.1);border:1px solid rgba(201,132,90,0.3);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font)">🔑 Senha</button>
+      ${(USER_ROLES[getCurrentRole()]||{}).canResetSenha ? '<button onclick="resetarSenha(\''+m.id+'\',\''+m.nome+'\''+')" style="padding:5px 12px;border-radius:8px;background:rgba(201,132,90,0.1);border:1px solid rgba(201,132,90,0.3);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font)">🔑 Senha</button>' : ''}
       <button class="btn btn-danger btn-xs" onclick="delMember('${m.id}')">×</button>
     </div>
   </div>`).join(''):'<div class="empty"><p>Sem usuários</p></div>';}
@@ -3214,16 +3393,17 @@ document.getElementById('cob-venc').value=today();
 // PERMISSÕES POR CARGO
 // ================================================================
 var USER_ROLES = {
-  gestora:  {pages:['all'], canDelete:true,  canFinanceiro:true,  label:'Gestora',   funilEtapa:null,       filtroKanban:null},
-  gerente:  {pages:['dashboard','funil-clientes','pipeline','clientes','kanban','posts-dia','trends-page','metricas','canal','email-mkt','datas-com','calendario','onboarding'], canDelete:false, canFinanceiro:false, label:'Gerente', funilEtapa:null, filtroKanban:null},
-  sm1:      {pages:['dashboard','kanban','posts-dia','trends-page','email-mkt','datas-com','funil-clientes'], canDelete:false, canFinanceiro:false, label:'Social Media', funilEtapa:'sm1', filtroKanban:'sm1'},
-  sm2:      {pages:['dashboard','kanban','posts-dia','trends-page','email-mkt','datas-com','funil-clientes'], canDelete:false, canFinanceiro:false, label:'Social Media', funilEtapa:'sm2', filtroKanban:'sm2'},
-  sm3:      {pages:['dashboard','kanban','posts-dia','trends-page','email-mkt','datas-com','funil-clientes'], canDelete:false, canFinanceiro:false, label:'Social Media', funilEtapa:'sm3', filtroKanban:'sm3'},
-  video:    {pages:['dashboard','kanban','posts-dia','funil-clientes'], canDelete:false, canFinanceiro:false, label:'Editor de Vídeo', funilEtapa:'video', filtroKanban:'video'},
-  designer: {pages:['dashboard','kanban','posts-dia','funil-clientes','canal'], canDelete:false, canFinanceiro:false, label:'Designer', funilEtapa:'design', filtroKanban:'design'},
-  postagem: {pages:['dashboard','kanban','posts-dia','funil-clientes'], canDelete:false, canFinanceiro:false, label:'Assistente', funilEtapa:'postagem', filtroKanban:'postagem'},
-  social:   {pages:['dashboard','kanban','posts-dia','trends-page','metricas','canal'], canDelete:false, canFinanceiro:false, label:'Social Media', funilEtapa:null, filtroKanban:null},
-  financeiro:{pages:['dashboard','financeiro','clientes'], canDelete:false, canFinanceiro:true, label:'Financeiro', funilEtapa:null, filtroKanban:null},
+  master:   {pages:['all'], canDelete:true,  canFinanceiro:true,  canConfig:true,  canResetSenha:true,  label:'Master',    funilEtapa:null, filtroKanban:null},
+  gestora:  {pages:['all'], canDelete:true,  canFinanceiro:true,  canConfig:true,  canResetSenha:true,  label:'Gestora',   funilEtapa:null, filtroKanban:null},
+  gerente:  {pages:['dashboard','funil-clientes','pipeline','clientes','kanban','posts-dia','trends-page','metricas','canal','email-mkt','datas-com','calendario','onboarding','relatorios'], canDelete:true, canFinanceiro:false, canConfig:false, canResetSenha:true, label:'Gerente', funilEtapa:null, filtroKanban:null},
+  sm1:      {pages:['dashboard','kanban','posts-dia','trends-page','email-mkt','datas-com','funil-clientes'], canDelete:false, canFinanceiro:false, canConfig:false, canResetSenha:false, label:'Social Media', funilEtapa:'sm1', filtroKanban:'sm1'},
+  sm2:      {pages:['dashboard','kanban','posts-dia','trends-page','email-mkt','datas-com','funil-clientes'], canDelete:false, canFinanceiro:false, canConfig:false, canResetSenha:false, label:'Social Media', funilEtapa:'sm2', filtroKanban:'sm2'},
+  sm3:      {pages:['dashboard','kanban','posts-dia','trends-page','email-mkt','datas-com','funil-clientes'], canDelete:false, canFinanceiro:false, canConfig:false, canResetSenha:false, label:'Social Media', funilEtapa:'sm3', filtroKanban:'sm3'},
+  video:    {pages:['dashboard','kanban','posts-dia','trends-page','email-mkt','datas-com','funil-clientes'], canDelete:false, canFinanceiro:false, canConfig:false, canResetSenha:false, label:'Editor de Vídeo', funilEtapa:'video', filtroKanban:'video'},
+  designer: {pages:['dashboard','kanban','posts-dia','funil-clientes','canal'], canDelete:false, canFinanceiro:false, canConfig:false, canResetSenha:false, label:'Designer', funilEtapa:'design', filtroKanban:'design'},
+  postagem: {pages:['dashboard','kanban','posts-dia','trends-page','email-mkt','datas-com','funil-clientes'], canDelete:false, canFinanceiro:false, canConfig:false, canResetSenha:false, label:'Assistente', funilEtapa:'postagem', filtroKanban:'postagem'},
+  social:   {pages:['dashboard','kanban','posts-dia','trends-page','metricas','canal'], canDelete:false, canFinanceiro:false, canConfig:false, canResetSenha:false, label:'Social Media', funilEtapa:null, filtroKanban:null},
+  financeiro:{pages:['dashboard','financeiro','clientes'], canDelete:false, canFinanceiro:true, canConfig:false, canResetSenha:false, label:'Financeiro', funilEtapa:null, filtroKanban:null},
 };
 
 function getCurrentRole(){
@@ -3266,6 +3446,12 @@ function applyRoleUI(){
         next = next.nextElementSibling;
       }
     }
+  }
+
+  // Hide Configurações for non-config roles
+  var configNavItem = document.querySelector('.nav-item[data-page="configuracoes"]');
+  if(configNavItem){
+    configNavItem.style.display = roleObj.canConfig ? '' : 'none';
   }
 
   // Apply funil stage filter for operational roles
@@ -3364,7 +3550,7 @@ async function syncTrelloBoard(boardId, boardName){
     var lists = await listsR.json();
 
     // Map Trello list names to kanban stages
-    function mapListToStage(listName){
+    async function mapListToStage(listName){
       var n = listName.toLowerCase();
       if(n.includes('ideia') || n.includes('idea') || n.includes('backlog')) return 'ideia';
       if(n.includes('produção') || n.includes('producao') || n.includes('fazendo') || n.includes('doing') || n.includes('produc')) return 'producao';
@@ -3516,7 +3702,7 @@ function showTrelloSyncModal(){
     autoConnectTrello().then(function(){
       if(trelloBoards&&trelloBoards.length) showTrelloSyncModal();
       else toast('Conecte o Trello primeiro em Configurações','er');
-    });
+    }).catch(function(e){console.error('[AgênciaOS]',e);});
     return;
   }
   var modal = document.getElementById('modal-trello-sync');
@@ -3597,7 +3783,7 @@ function calDayClick(dateStr){
       +'<button onclick="closeQuickPost()" style="padding:11px 14px;border-radius:10px;background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--font)">Cancelar</button>'
       +'</div></div></div>';
     qm.style.display = 'flex';
-  });
+  }).catch(function(e){console.error('[AgênciaOS]',e);});
 }
 
 async function saveQuickPost(){
@@ -3667,7 +3853,7 @@ function installPWA(){
       window._pwaPrompt = null;
       var btn = document.getElementById('btn-install-pwa');
       if(btn) btn.style.display='none';
-    });
+    }).catch(function(e){console.error('[AgênciaOS]',e);});
   } else {
     toast('Use o menu do browser → "Adicionar à tela inicial"','ok');
   }
@@ -3831,7 +4017,7 @@ function confirmarExcluirCliente(clientId){
       toast('Cliente excluído','ok');
       try{closeModal('modal-edit-client');}catch(e){}
       nav('clientes');
-    });
+    }).catch(function(e){console.error('[AgênciaOS]',e);});
   }
 }
 
@@ -3851,7 +4037,7 @@ function enviarWhatsAppAprovacao(clientId){
     var waUrl = 'https://wa.me/'+phone+'?text='+encodeURIComponent(msg);
     window.open(waUrl,'_blank');
     toast('Abrindo WhatsApp...','ok');
-  });
+  }).catch(function(e){console.error('[AgênciaOS]',e);});
 }
 
 async function gerarLinhaEditorialManual(){
@@ -3944,7 +4130,7 @@ function initPWA(){
       deferredPrompt.userChoice.then(function(result){
         if(result.outcome==='accepted') toast('Instalando app...','ok');
         deferredPrompt = null;
-      });
+      }).catch(function(e){console.error('[AgênciaOS]',e);});
     } else {
       toast('Use o menu do browser → "Adicionar à tela inicial"','ok');
     }
@@ -3970,7 +4156,7 @@ function leSwitchMode(mode){
   }
 }
 
-function leToggleDia(dia, el){
+async function leToggleDia(dia, el){
   var idx = _leDias.indexOf(dia);
   if(idx === -1){
     _leDias.push(dia);
@@ -4043,6 +4229,8 @@ async function renderCadastroTab(c){
     +'<input class="fi" id="cad-nome" value="'+(c.nome||'')+'" placeholder="Nome do cliente"></div>'
     +'<div><label style="font-size:11px;font-weight:600;color:var(--text3);display:block;margin-bottom:5px">Segmento</label>'
     +'<input class="fi" id="cad-seg" value="'+(c.seg||'')+'" placeholder="Ex: Advocacia, E-commerce..."></div>'
+    +'<div><label style="font-size:11px;font-weight:600;color:var(--text3);display:block;margin-bottom:5px">Nicho</label>'
+    +'<input class="fi" id="cad-nicho" value="'+(c.nicho||'')+'" placeholder="Ex: Saúde, Moda, Tecnologia..."></div>'
     +'<div><label style="font-size:11px;font-weight:600;color:var(--text3);display:block;margin-bottom:5px">Contato / Responsável</label>'
     +'<input class="fi" id="cad-contato" value="'+(c.contato||'')+'" placeholder="Nome do responsável"></div>'
     +'<div><label style="font-size:11px;font-weight:600;color:var(--text3);display:block;margin-bottom:5px">Cargo / Função</label>'
@@ -4272,7 +4460,7 @@ function openGerarLinhaEditorial(){
       +'<div style="margin-bottom:14px"><label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:block;margin-bottom:8px">Formatos</label><div style="display:flex;flex-wrap:wrap;gap:6px"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 10px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-fmt-reels" checked style="accent-color:var(--accent)"> 🎬 Reels</label><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 10px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-fmt-carrossel" checked style="accent-color:var(--accent)"> 🎠 Carrossel</label><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 10px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-fmt-feed" checked style="accent-color:var(--accent)"> 📸 Post Feed</label><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 10px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-fmt-stories" style="accent-color:var(--accent)"> 📱 Stories</label></div></div>'
       +'<div style="margin-bottom:16px"><label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:block;margin-bottom:8px">Dias de publicação</label><div style="display:flex;flex-wrap:wrap;gap:6px"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 11px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-seg" checked style="accent-color:var(--accent)"> Seg</label><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 11px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-ter" checked style="accent-color:var(--accent)"> Ter</label><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 11px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-qua" checked style="accent-color:var(--accent)"> Qua</label><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 11px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-qui" checked style="accent-color:var(--accent)"> Qui</label><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 11px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-sex" checked style="accent-color:var(--accent)"> Sex</label><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 11px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-sab" style="accent-color:var(--accent)"> Sáb</label><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 11px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-dom" style="accent-color:var(--accent)"> Dom</label></div></div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px"><button onclick="gerarLinhaEditorialIA()" style="padding:11px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--gold));border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">✦ Gerar com IA</button><button onclick="gerarDatasManual()" style="padding:11px;border-radius:10px;background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">📅 Só criar datas</button></div>'
-      +'<div id="le-resultado" style="margin-top:8px"></div>'
+      +'<div id="le-datas-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"></div>'+'<div id="le-resultado" style="margin-top:8px"></div>'
       +'</div></div>';
     modal.style.display='flex';
     // Populate date chips
@@ -4288,7 +4476,7 @@ function openGerarLinhaEditorial(){
     },250);
     var firstClient=clients[0];
     if(firstClient&&firstClient.posts_mes){var qtdSel=document.getElementById('le-qtd');if(qtdSel)qtdSel.value=firstClient.posts_mes;}
-  });
+  }).catch(function(e){console.error('[AgênciaOS]',e);});
 }
 
 function closeLEModal(){var m=document.getElementById('modal-linha-editorial');if(m)m.style.display='none';}
@@ -4363,7 +4551,7 @@ async function salvarLinhaEditorial(){
 var _portalPollInterval = null;
 var _lastActivityCheck = new Date().toISOString();
 
-function startPortalPolling(){
+async function startPortalPolling(){
   if(_portalPollInterval) return;
   _portalPollInterval = setInterval(checkPortalActivity, 30000); // check every 30s
   console.log('Portal polling started');
@@ -4459,7 +4647,7 @@ function exportarBackupJSON(){
     a.download = 'backup_leessence_'+new Date().toISOString().split('T')[0]+'.json';
     a.click();
     toast('Backup exportado! ✓','ok');
-  });
+  }).catch(function(e){console.error('[AgênciaOS]',e);});
 }
 
 // Run backup every 2 hours + on load
@@ -4516,7 +4704,7 @@ function openStageModal(postId){
       +'<button onclick="document.getElementById(\'modal-stage-edit\').style.display=\'none\'" style="padding:10px 16px;border-radius:10px;background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:13px;cursor:pointer;font-family:var(--font)">Cancelar</button>'
       +'</div></div></div>';
     modal.style.display = 'flex';
-  });
+  }).catch(function(e){console.error('[AgênciaOS]',e);});
 }
 
 async function salvarStageEdit(postId){
@@ -4537,7 +4725,7 @@ async function salvarStageEdit(postId){
 // FEATURE 2: BACKUP AUTOMÁTICO RECORRENTE
 // ================================================================
 
-function initAutoBackup(){
+async function initAutoBackup(){
   // Backup every 2 hours
   setInterval(function(){
     fazerBackupAuto();
@@ -4576,7 +4764,7 @@ async function fazerBackupAuto(){
   }catch(e){console.warn('Backup failed:',e);}
 }
 
-function listarBackups(){
+async function listarBackups(){
   var keys = Object.keys(localStorage).filter(function(k){return k.startsWith('le_backup_');}).sort().reverse();
   return keys.map(function(k){
     try{
@@ -4831,7 +5019,7 @@ function sendEmailMkt(){
 // DASHBOARD
 // ================================================================
 
-function saveApiKey(){
+async function saveApiKey(){
   var key = ((document.getElementById('cfg-claude-key')||{}).value||'').trim();
   if(!key){toast('Cole sua API Key','er');return;}
   localStorage.setItem('le_claude_key', key);
@@ -5266,7 +5454,7 @@ function abrirFunilCard(clientId, etapaId){
   modal.style.display = 'flex';
 }
 
-function atualizarFunilCard(clientId, etapaId){
+async function atualizarFunilCard(clientId, etapaId){
   // Refresh progress in modal
   var etapa = FUNIL_ETAPAS.find(function(e){return e.id===etapaId;});
   if(!etapa) return;
@@ -5504,11 +5692,19 @@ async function renderFunilDashboard(){
   });
   html += '</div></div>';
 
+  // Add quick note input at bottom
+  html += '<div style="margin-top:20px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px">';
+  html += '<div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">📝 Registrar nota</div>';
+  html += '<div style="display:flex;gap:8px">';
+  html += '<input class="fi" id="hist-in" placeholder="Ex: Cliente solicitou pausa, reunião realizada..." style="flex:1">';
+  html += '<button class="btn btn-primary btn-sm" onclick="addHist(\"'+clientId+'\")">Registrar</button>';
+  html += '</div></div>';
+
   el.innerHTML = html;
 }
 
 
-function fecharModalEditMembro(){var m=document.getElementById('modal-edit-member');if(m)m.style.display='none';}
+async function fecharModalEditMembro(){var m=document.getElementById('modal-edit-member');if(m)m.style.display='none';}
 async function editarMembro(id){
   var members = await dbGet('members');
   var m = members.find(function(x){return x.id===id;});
@@ -5524,7 +5720,9 @@ async function editarMembro(id){
   }
 
   // Build funcao options
+  var myRole = getCurrentRole();
   var funcaoOpts = [
+    ...(myRole==='master' ? [{val:'master', label:'Master (Proprietária)'}] : []),
     {val:'gestora',  label:'Gestora'},
     {val:'gerente',  label:'Gerente'},
     {val:'sm1',      label:'Social Media 1'},
