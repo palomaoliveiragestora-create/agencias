@@ -2954,15 +2954,24 @@ async function callClaude(prompt){
       var msg=data.choices&&data.choices[0]&&data.choices[0].message?data.choices[0].message.content:null;
       return msg||null;
     }
-    // Claude via proxy (sk-ant...)
-    var res = await fetch('/.netlify/functions/claude-proxy',{
+    // Claude direto (sk-ant...)
+    var res = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({prompt:prompt, max_tokens:1500})
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-haiku-4-5-20251001',
+        max_tokens:1500,
+        messages:[{role:'user',content:prompt}]
+      })
     });
     var data = await res.json();
-    if(data.error) throw new Error(data.error);
-    return data.text||null;
+    if(data.error) throw new Error(data.error.message||'Erro Claude API');
+    return (data.content&&data.content[0]&&data.content[0].text)||null;
   }catch(e){
     toast('Erro IA: '+e.message,'er');
     return null;
