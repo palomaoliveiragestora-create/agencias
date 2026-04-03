@@ -4,31 +4,130 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AgênciaOS — Le Essence</title>
+<meta name="theme-color" content="#c9845a">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'DM Sans', sans-serif; background: #0e0f11; color: #f0f1f3; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-.box { background: #16181c; border: 1px solid rgba(255,255,255,0.13); border-radius: 20px; padding: 40px; width: 100%; max-width: 400px; text-align: center; }
-.logo { width: 52px; height: 52px; background: #6c63ff; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: #fff; margin: 0 auto 20px; }
-h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
-p { font-size: 14px; color: #8b8fa8; margin-bottom: 28px; }
-input { width: 100%; background: #1e2128; border: 1px solid rgba(255,255,255,0.13); border-radius: 10px; padding: 12px 14px; color: #f0f1f3; font-size: 14px; outline: none; margin-bottom: 12px; font-family: inherit; }
-input:focus { border-color: #6c63ff; }
-button { width: 100%; padding: 13px; border-radius: 10px; background: #6c63ff; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; border: none; font-family: inherit; margin-top: 4px; }
-button:hover { background: #7c73ff; }
-.error { color: #f87171; font-size: 13px; margin-top: 10px; display: none; padding: 10px; background: rgba(239,68,68,0.1); border-radius: 8px; }
-.loading { display: none; color: #8b8fa8; font-size: 13px; margin-top: 10px; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#0c0a0e;color:#e8eaf0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+:root{--accent:#c9845a;--gold:#d4a855;--bg2:#120f15;--bg3:#181420;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);--text2:rgba(255,255,255,0.5);--text3:rgba(255,255,255,0.25);--r:10px;--red:#ef4444}
+
+.login-wrap{
+  width:100%;max-width:420px;
+  background:var(--bg2);
+  border:1px solid var(--border2);
+  border-radius:20px;
+  padding:40px 36px;
+  box-shadow:0 24px 80px rgba(0,0,0,.5);
+}
+
+.logo-area{text-align:center;margin-bottom:32px}
+.logo-icon{
+  width:60px;height:60px;
+  background:linear-gradient(135deg,var(--accent),var(--gold));
+  border-radius:16px;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:800;color:#fff;
+  margin-bottom:14px;
+  box-shadow:0 8px 24px rgba(201,132,90,0.35);
+}
+.logo-name{font-size:20px;font-weight:800;letter-spacing:-.3px}
+.logo-sub{font-size:11px;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;font-weight:600;margin-top:2px}
+
+.form-label{display:block;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.form-input{
+  width:100%;
+  background:#1e1828;
+  border:1px solid var(--border2);
+  border-radius:var(--r);
+  padding:11px 14px;
+  color:#e8eaf0;
+  font-size:14px;
+  font-family:'Inter',sans-serif;
+  outline:none;
+  transition:border-color .15s;
+  margin-bottom:16px;
+}
+.form-input:focus{border-color:var(--accent);background:#221c2e}
+.form-input::placeholder{color:var(--text3)}
+
+.btn-login{
+  width:100%;
+  padding:13px;
+  border-radius:var(--r);
+  background:linear-gradient(135deg,var(--accent),var(--gold));
+  border:none;
+  color:#fff;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  font-family:'Inter',sans-serif;
+  transition:opacity .15s;
+  margin-top:4px;
+  letter-spacing:.01em;
+}
+.btn-login:hover{opacity:.9}
+.btn-login:disabled{opacity:.5;cursor:not-allowed}
+
+.error-msg{
+  background:rgba(239,68,68,.1);
+  border:1px solid rgba(239,68,68,.25);
+  color:var(--red);
+  border-radius:8px;
+  padding:10px 14px;
+  font-size:13px;
+  margin-bottom:16px;
+  display:none;
+}
+
+.footer-txt{text-align:center;font-size:11px;color:var(--text3);margin-top:24px}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
 </style>
 </head>
 <body>
-<div class="box">
-  <div class="logo">L</div>
-  <h1>Le Essence</h1>
-  <p>Entre com seu e-mail e senha</p>
-  <input type="email" id="email" placeholder="seu@email.com" autofocus>
-  <input type="password" id="senha" placeholder="Senha" onkeydown="if(event.key==='Enter')entrar()">
-  <button onclick="entrar()">Entrar</button>
-  <div class="error" id="erro"></div>
-  <div class="loading" id="loading">Verificando...</div>
+<div class="login-wrap">
+  <div class="logo-area">
+    <div class="logo-icon">LE</div>
+    <div class="logo-name">Le Essence</div>
+    <div class="logo-sub">AgênciaOS</div>
+  </div>
+
+  <div class="error-msg" id="err-msg"></div>
+
+  <label class="form-label">E-mail</label>
+  <input class="form-input" id="login-email" type="email" placeholder="seu@email.com" autocomplete="email">
+
+  <label class="form-label">Senha</label>
+  <input class="form-input" id="login-senha" type="password" placeholder="••••••••" autocomplete="current-password">
+
+  <button class="btn-login" id="btn-entrar" onclick="doLogin()">Entrar</button>
+
+  <div style="text-align:center;margin-top:14px">
+    <button onclick="mostrarEsqueci()" style="background:none;border:none;color:var(--text2);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;text-decoration:underline;text-underline-offset:3px">Esqueci minha senha</button>
+  </div>
+
+  <div class="footer-txt">Le Essence Agência de Marketing Digital</div>
+
+  <!-- Modal esqueci senha -->
+  <div id="modal-esqueci" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:center;justify-content:center;padding:20px">
+    <div style="background:#120f15;border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:28px 28px 24px;max-width:360px;width:100%;text-align:center">
+      <div style="font-size:32px;margin-bottom:12px">🔑</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:10px">Esqueceu a senha?</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.6;margin-bottom:20px">
+        Entre em contato com a <strong style="color:#c9845a">Paloma</strong> pelo WhatsApp para solicitar uma nova senha.<br><br>
+        Ela vai resetar o acesso para você em Configurações → Usuários.
+      </div>
+      <a href="https://wa.me/5548988220761?text=Ol%C3%A1%20Paloma%2C%20esqueci%20minha%20senha%20do%20AgênciaOS!" 
+         target="_blank"
+         style="display:block;padding:11px;border-radius:10px;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:10px">
+        💬 Chamar no WhatsApp
+      </a>
+      <button onclick="fecharEsqueci()" style="width:100%;padding:10px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.5);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif">
+        Fechar
+      </button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -36,70 +135,105 @@ const SB_URL = 'https://nblokxxsjanjajkgvhyg.supabase.co';
 const SB_KEY = 'sb_publishable_YQv28_1mgjKskFZ_moWByg_-CY7_nK3';
 const AGENCY_ID = 'leessence';
 
-async function entrar() {
-  const email = document.getElementById('email').value.trim();
-  const senha = document.getElementById('senha').value;
-  const erro = document.getElementById('erro');
-  const loading = document.getElementById('loading');
-  
-  erro.style.display = 'none';
-  
-  if (!email || !senha) {
-    erro.textContent = 'Preencha e-mail e senha';
-    erro.style.display = 'block';
-    return;
-  }
-  
-  loading.style.display = 'block';
-  document.querySelector('button').disabled = true;
-  
+// Se já tem sessão válida, vai direto
+(function(){
   try {
-    const r = await fetch(`${SB_URL}/rest/v1/members?email=eq.${encodeURIComponent(email)}&agency_id=eq.${AGENCY_ID}`, {
-      headers: {
-        'apikey': SB_KEY,
-        'Authorization': 'Bearer ' + SB_KEY,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    const members = await r.json();
-    
-    if (!members || members.length === 0) {
-      throw new Error('E-mail não encontrado. Fale com o administrador.');
+    var s = localStorage.getItem('le_user');
+    var t = parseInt(localStorage.getItem('le_user_time') || '0');
+    if (s && (Date.now() - t) < 8 * 3600 * 1000) {
+      window.location.href = 'index.html';
     }
-    
-    const m = members[0];
-    const senhaHash = btoa(senha);
-    
-    if (m.senha && m.senha !== senhaHash) {
-      throw new Error('Senha incorreta.');
-    }
-    
-    if (!m.senha) {
-      // First login - save password
-      await fetch(`${SB_URL}/rest/v1/members?id=eq.${m.id}`, {
-        method: 'PATCH',
+  } catch(e) {}
+})();
+
+document.getElementById('login-senha').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') doLogin();
+});
+document.getElementById('login-email').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') document.getElementById('login-senha').focus();
+});
+
+function showErr(msg) {
+  var el = document.getElementById('err-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideErr() {
+  document.getElementById('err-msg').style.display = 'none';
+}
+
+async function doLogin() {
+  hideErr();
+  var email = (document.getElementById('login-email').value || '').trim().toLowerCase();
+  var senha = document.getElementById('login-senha').value || '';
+
+  if (!email) { showErr('Informe seu e-mail.'); return; }
+  if (!senha) { showErr('Informe sua senha.'); return; }
+
+  var btn = document.getElementById('btn-entrar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Verificando...';
+
+  try {
+    var res = await fetch(
+      SB_URL + '/rest/v1/members?agency_id=eq.' + AGENCY_ID + '&email=eq.' + encodeURIComponent(email),
+      {
         headers: {
           'apikey': SB_KEY,
           'Authorization': 'Bearer ' + SB_KEY,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify({ senha: senhaHash })
-      });
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    var members = await res.json();
+
+    if (!members || members.length === 0) {
+      showErr('E-mail não encontrado. Verifique com a gestora.');
+      btn.disabled = false; btn.innerHTML = 'Entrar'; return;
     }
-    
-    // Save session and redirect
-    localStorage.setItem('le_user', JSON.stringify(m));
+
+    var member = members[0];
+    var senhaCorreta = member.senha || '';
+
+    if (!senhaCorreta) {
+      showErr('Sua senha ainda não foi configurada. Fale com a Paloma.');
+      btn.disabled = false; btn.innerHTML = 'Entrar'; return;
+    }
+
+    if (btoa(senha) !== senhaCorreta) {
+      showErr('Senha incorreta.');
+      btn.disabled = false; btn.innerHTML = 'Entrar'; return;
+    }
+
+    // ✅ Login aprovado
+    var user = {
+      id: member.id,
+      nome: member.nome,
+      funcao: member.funcao || 'social',
+      cargo: member.funcao || 'social'
+    };
+    localStorage.setItem('le_user', JSON.stringify(user));
+    localStorage.setItem('le_user_time', Date.now().toString());
     window.location.href = 'index.html';
-    
+
   } catch(e) {
-    loading.style.display = 'none';
-    document.querySelector('button').disabled = false;
-    erro.textContent = e.message || 'Erro ao conectar. Tente novamente.';
-    erro.style.display = 'block';
+    console.error(e);
+    showErr('Erro de conexão. Tente novamente.');
+    btn.disabled = false; btn.innerHTML = 'Entrar';
   }
 }
+
+function mostrarEsqueci() {
+  var m = document.getElementById('modal-esqueci');
+  m.style.display = 'flex';
+}
+function fecharEsqueci() {
+  document.getElementById('modal-esqueci').style.display = 'none';
+}
+// Fechar clicando fora
+document.getElementById('modal-esqueci').addEventListener('click', function(e){
+  if(e.target === this) fecharEsqueci();
+});
 </script>
 </body>
 </html>
