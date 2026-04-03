@@ -859,6 +859,19 @@ async function gerarCalendarioIA(clientId){
   var clients=await dbGet('clients');
   var client=clients.find(function(c){return c.id===clientId;});
   if(!client){toast('Cliente não encontrado','er');return;}
+  // Check if briefing should be used
+  var usarBriefing = document.getElementById('le-usar-briefing') && document.getElementById('le-usar-briefing').checked;
+  var briefingCtx = '';
+  if(usarBriefing && client.briefing){
+    var b = client.briefing;
+    if(b.estrategia) briefingCtx += '\nEstratégia: '+b.estrategia;
+    if(b.tom) briefingCtx += '\nTom de voz: '+b.tom;
+    if(b.publico) briefingCtx += '\nPúblico: '+b.publico;
+    if(b.diferenciais) briefingCtx += '\nDiferenciais: '+b.diferenciais;
+    if(b.keywords) briefingCtx += '\nPalavras-chave: '+b.keywords;
+    if(b.restricoes) briefingCtx += '\nRestrições: '+b.restricoes;
+    if(b.prompt_ia) briefingCtx += '\n\nInstruções específicas: '+b.prompt_ia;
+  }
   var modal=document.getElementById('modal-cal-ia');
   if(!modal){modal=document.createElement('div');modal.id='modal-cal-ia';modal.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;align-items:center;justify-content:center;padding:20px';document.body.appendChild(modal);}
   var monthName=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][new Date().getMonth()];
@@ -950,6 +963,19 @@ async function gerarRelatorioPDF(clientId){
   var clients=await dbGet('clients');
   var client=clients.find(function(c){return c.id===clientId;});
   if(!client){toast('Cliente não encontrado','er');return;}
+  // Check if briefing should be used
+  var usarBriefing = document.getElementById('le-usar-briefing') && document.getElementById('le-usar-briefing').checked;
+  var briefingCtx = '';
+  if(usarBriefing && client.briefing){
+    var b = client.briefing;
+    if(b.estrategia) briefingCtx += '\nEstratégia: '+b.estrategia;
+    if(b.tom) briefingCtx += '\nTom de voz: '+b.tom;
+    if(b.publico) briefingCtx += '\nPúblico: '+b.publico;
+    if(b.diferenciais) briefingCtx += '\nDiferenciais: '+b.diferenciais;
+    if(b.keywords) briefingCtx += '\nPalavras-chave: '+b.keywords;
+    if(b.restricoes) briefingCtx += '\nRestrições: '+b.restricoes;
+    if(b.prompt_ia) briefingCtx += '\n\nInstruções específicas: '+b.prompt_ia;
+  }
   var posts=await dbGet('posts');
   var cPosts=posts.filter(function(p){return p.client_id===clientId;});
   var pub=cPosts.filter(function(p){return p.stage==='publicado';});
@@ -1016,6 +1042,19 @@ async function gerarEstrategiaIA(clientId){
   var clients=await dbGet('clients');
   var client=clients.find(function(c){return c.id===clientId;});
   if(!client){toast('Cliente não encontrado','er');return;}
+  // Check if briefing should be used
+  var usarBriefing = document.getElementById('le-usar-briefing') && document.getElementById('le-usar-briefing').checked;
+  var briefingCtx = '';
+  if(usarBriefing && client.briefing){
+    var b = client.briefing;
+    if(b.estrategia) briefingCtx += '\nEstratégia: '+b.estrategia;
+    if(b.tom) briefingCtx += '\nTom de voz: '+b.tom;
+    if(b.publico) briefingCtx += '\nPúblico: '+b.publico;
+    if(b.diferenciais) briefingCtx += '\nDiferenciais: '+b.diferenciais;
+    if(b.keywords) briefingCtx += '\nPalavras-chave: '+b.keywords;
+    if(b.restricoes) briefingCtx += '\nRestrições: '+b.restricoes;
+    if(b.prompt_ia) briefingCtx += '\n\nInstruções específicas: '+b.prompt_ia;
+  }
   var seg=client.seg||'Geral';
   var data=ESTRATEGIA_IG[seg]||ESTRATEGIA_IG['Geral'];
   var modal=document.getElementById('modal-estrategia-ia');
@@ -1059,7 +1098,7 @@ async function gerarEstrategiaIALive(clientId){
 function openAnaliseConcorrente(clientId){
   var modal=document.getElementById('modal-concorrente');
   if(!modal){modal=document.createElement('div');modal.id='modal-concorrente';modal.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;align-items:center;justify-content:center;padding:20px';modal.addEventListener('click',function(e){if(e.target===modal){modal.style.display='none';document.body.style.overflow='';}});document.body.appendChild(modal);}
-  modal.innerHTML='<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:20px;width:100%;max-width:540px"><div style="padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:15px;font-weight:800">🔍 Analisar Concorrente</div><div style="font-size:11px;color:var(--text2)">IA analisa e aponta oportunidades</div></div><button onclick="document.getElementById(\'modal-concorrente\').style.display=\'none\';document.body.style.overflow=\'\'" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:22px">×</button></div><div style="padding:20px"><div style="margin-bottom:12px"><label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:block;margin-bottom:6px">@ do concorrente no Instagram</label><input id="concorrente-handle" class="fi" placeholder="@nomeconcorrente"></div><div style="margin-bottom:14px"><label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:block;margin-bottom:6px">Foco da análise (opcional)</label><textarea id="concorrente-obs" class="fta" style="min-height:60px" placeholder="Ex: frequência de posts, formatos, engajamento..."></textarea></div><button onclick="analisarConcorrente(\''+clientId+'\')" style="width:100%;padding:12px;border-radius:10px;background:var(--accent);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:12px">🔍 Analisar com IA</button><div id="concorrente-result"></div></div></div>';
+  modal.innerHTML='<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:20px;width:100%;max-width:540px;max-height:90vh;display:flex;flex-direction:column"><div style="padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:15px;font-weight:800">🔍 Analisar Concorrente</div><div style="font-size:11px;color:var(--text2)">IA analisa e aponta oportunidades</div></div><button onclick="document.getElementById(\'modal-concorrente\').style.display=\'none\';document.body.style.overflow=\'\'" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:22px">×</button></div><div style="padding:20px;overflow-y:auto;flex:1><div style="margin-bottom:12px"><label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:block;margin-bottom:6px">@ do concorrente no Instagram</label><input id="concorrente-handle" class="fi" placeholder="@nomeconcorrente"></div><div style="margin-bottom:14px"><label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:block;margin-bottom:6px">Foco da análise (opcional)</label><textarea id="concorrente-obs" class="fta" style="min-height:60px" placeholder="Ex: frequência de posts, formatos, engajamento..."></textarea></div><button onclick="analisarConcorrente(\''+clientId+'\')" style="width:100%;padding:12px;border-radius:10px;background:var(--accent);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:12px">🔍 Analisar com IA</button><div id="concorrente-result"></div></div></div>';
   modal.style.display='flex';document.body.style.overflow='hidden';
 }
 
@@ -1074,7 +1113,8 @@ async function analisarConcorrente(clientId){
     var client=clients.find(function(c){return c.id===clientId;})||{};
     var prompt='Especialista em análise de concorrentes no Instagram. Cliente: '+(client.nome||'')+ ' segmento '+(client.seg||'')+'. Concorrente: '+handle+'. '+(obs?'Foco: '+obs+'. ':'')+' Gere análise com: 1) O que o concorrente faz bem, 2) Pontos fracos para explorar, 3) 3 estratégias para superar. Direto, max 300 palavras.';
     var resp=await callClaude(prompt);
-    if(result)result.innerHTML='<div style="padding:14px;background:var(--bg3);border-radius:10px;border-left:3px solid var(--accent)"><div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px">📊 Análise de '+handle+'</div><div style="font-size:12px;color:var(--text);line-height:1.7;white-space:pre-line">'+resp+'</div><button onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent);toast(\'Copiado!\',\'ok\')" style="margin-top:10px;padding:5px 12px;border-radius:6px;background:var(--accent)22;border:1px solid var(--accent)44;color:var(--accent);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font)">📋 Copiar</button></div>';
+    var formatted=resp.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/###\s?([^\n]+)/g,'<div style="font-size:13px;font-weight:800;color:var(--text);margin:12px 0 4px">$1</div>').replace(/##\s?([^\n]+)/g,'<div style="font-size:12px;font-weight:700;color:var(--accent);margin:10px 0 4px">$1</div>').replace(/^\*\s/gm,'• ').replace(/\n/g,'<br>');
+    if(result)result.innerHTML='<div style="padding:14px;background:var(--bg3);border-radius:10px;border-left:3px solid var(--accent)"><div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px">📊 Análise de '+handle+'</div><div style="font-size:12px;color:var(--text);line-height:1.8">'+formatted+'</div><button onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent);toast(\'Copiado!\',\'ok\')" style="margin-top:10px;padding:5px 12px;border-radius:6px;background:var(--accent)22;border:1px solid var(--accent)44;color:var(--accent);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font)">📋 Copiar</button></div>';
   }catch(e){if(result)result.innerHTML='<div style="padding:12px;font-size:12px;color:#ef4444">Erro: '+e.message+'</div>';}
 }
 
@@ -1550,6 +1590,7 @@ function setSynced() { document.getElementById('sync-dot').className='sync-dot';
         <div class="ti" onclick="switchTab('cd-cadastro',this)">📝 Cadastro</div>
         <div class="ti" onclick="switchTab('cd-ia',this)">✦ IA</div>
         <div class="ti" onclick="switchTab('cd-estrategia',this)">Estratégia</div>
+        <div class="ti" onclick="switchTab('cd-briefing',this)">📋 Briefing</div>
         <div class="ti" onclick="switchTab('cd-financeiro',this)">Financeiro</div>
       </div>
       <div id="cd-geral" class="tp active"></div>
@@ -1565,6 +1606,7 @@ function setSynced() { document.getElementById('sync-dot').className='sync-dot';
       <div id="cd-timeline" class="tp"></div>
       <div id="cd-checklist" class="tp"></div>
       <div id="cd-estrategia" class="tp"></div>
+      <div id="cd-briefing" class="tp"></div>
       <div id="cd-financeiro" class="tp"></div>
       <div id="cd-cadastro" class="tp"></div>
     </div>
@@ -2896,6 +2938,7 @@ async function buildClientTabs(c){
   try{renderHistoricoAprovacoes(c.id);}catch(e){document.getElementById('cd-historico').innerHTML='<div class="empty">Histórico não disponível</div>';}
 
   document.getElementById('cd-estrategia').innerHTML=`<div class="card"><div class="st" style="margin-bottom:14px;font-size:13px">Planejamento</div><div class="fg"><label class="fl">Objetivo</label><input class="fi" id="est-obj" value="${c.objetivo||''}"></div><div class="fg"><label class="fl">Público</label><input class="fi" id="est-pub" value="${c.publico||''}"></div><div class="fg"><label class="fl">Tom de voz</label><input class="fi" id="est-tom" value="${c.tom||''}"></div><div class="fg"><label class="fl">Notas</label><textarea class="fta" id="est-notas">${c.estrategia||''}</textarea></div><button class="btn btn-primary btn-sm" onclick="saveEst('${c.id}')">Salvar</button></div>`;
+  renderBriefingTab(c);
 
   const cobr=await fetch(`${SB_URL}/rest/v1/cobrancas?client_id=eq.${c.id}&agency_id=eq.${AGENCY_ID}&order=created_at.desc`,{headers:SB.headers});
   const cobs=await cobr.json()||[];
@@ -2907,6 +2950,255 @@ async function switchTab(id,el){document.querySelectorAll('.tp').forEach(t=>t.cl
 async function changeClientStatus(id,val){await dbUpdate('clients',id,{status:val});}
 async function saveMetrics(id){await dbUpdate('clients',id,{metrics:{seguidores:document.getElementById('m-seg').value,alcance:document.getElementById('m-alc').value,engajamento:document.getElementById('m-eng').value}});toast('Salvo!','ok');}
 async function addHist(id){const input=document.getElementById('hist-in');if(!input){toast('Erro ao localizar campo','er');return;}const text=input.value.trim();if(!text)return;try{const r=await fetch(`${SB_URL}/rest/v1/clients?id=eq.${id}`,{headers:SB.headers});const data=await r.json();const c=Array.isArray(data)?data[0]:data;const hist=c?.historico||[];hist.unshift({text,date:new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})});await dbUpdate('clients',id,{historico:hist});input.value='';openClientDetail(id);toast('Registrado!','ok');}catch(e){toast('Erro ao registrar','er');console.error(e);}}
+
+// ================================================================
+// BRIEFING DO CLIENTE
+// ================================================================
+
+function renderBriefingTab(c){
+  var el = document.getElementById('cd-briefing');
+  if(!el) return;
+  var b = c.briefing || {};
+  var cores = b.cores || ['#c9845a','#d4a855','#0c0a0e','#ffffff','#1e1828'];
+  var cid = c.id;
+
+  // Build color pickers
+  var coresHtml = '';
+  cores.forEach(function(cor, i){
+    var oc = 'briefingUpdateCor(\"'+cid+'\",'+i+',this.value)';
+    coresHtml += '<div style="position:relative;display:inline-block">'
+      + '<input type="color" value="' + cor + '" onchange="' + oc + '"'
+      + ' style="width:42px;height:42px;border:2px solid var(--border2);border-radius:10px;cursor:pointer;padding:2px;background:none">'
+      + '</div>';
+  });
+
+  // Tab buttons
+  var tabLabels = ['📋 Estratégia','🎨 Identidade Visual','🤖 Prompt IA','📄 Documentos','📈 Campanhas'];
+  var tabsHtml = '';
+  tabLabels.forEach(function(t, i){
+    var active = i === 0;
+    var sto = 'switchBriefTab(this,\"brief-sec-'+i+'\",\"'+cid+'\")';
+    tabsHtml += '<div class="brief-tab' + (active?' active':'') + '" onclick="' + sto + '"'
+      + ' style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;'
+      + (active ? 'background:var(--accent);color:#fff;' : 'background:var(--bg3);color:var(--text2);border:1px solid var(--border2);')
+      + '">' + t + '</div>';
+  });
+
+  // PDF list
+  var pdfListHtml = '';
+  (b.pdfs||[]).forEach(function(p){
+    var rpf = 'briefingRemovePDF(\"'+cid+'\",\"'+p.name+'\")';
+    pdfListHtml += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border-radius:8px;margin-bottom:6px;font-size:12px">'
+      + '<span>📄 ' + p.name + '</span>'
+      + '<button onclick="' + rpf + '" style="margin-left:auto;background:none;border:none;color:var(--red);cursor:pointer;font-size:14px">×</button>'
+      + '</div>';
+  });
+
+  // Campanhas list
+  var campHtml = '';
+  var campanhas = b.campanhas || [];
+  if(!campanhas.length){
+    campHtml = '<div class="empty"><p>Nenhuma campanha registrada</p></div>';
+  } else {
+    campanhas.forEach(function(camp, i){
+      campHtml += '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">'
+        + '<div style="display:flex;justify-content:space-between;margin-bottom:6px">'
+        + '<div style="font-size:13px;font-weight:600">' + (camp.nome||'') + '</div>'
+        + '<div style="display:flex;gap:6px"><span style="font-size:11px;color:var(--text3)">' + (camp.periodo||'') + '</span>'
+        + '<button onclick="briefingRemoveCampanha(\"'+cid+'\",'+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px">×</button></div></div>'
+        + '<div style="font-size:12px;color:var(--text2);line-height:1.6">' + (camp.resultado||'') + '</div>'
+        + '</div>';
+    });
+  }
+
+  var html = '<div style="display:flex;flex-direction:column;gap:16px">';
+
+  // Sub-tab nav
+  html += '<div style="display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:12px">'
+    + tabsHtml + '</div>';
+
+  // Section 0: Estratégia
+  html += '<div id="brief-sec-0" class="brief-sec">'
+    + '<div class="fg"><label class="fl">Estratégia geral</label>'
+    + '<textarea class="fta" id="bf-estrategia" rows="4" placeholder="Descreva a estratégia de conteúdo, posicionamento e metas...">' + (b.estrategia||'') + '</textarea></div>'
+    + '<div class="fg"><label class="fl">Tom de voz</label>'
+    + '<input class="fi" id="bf-tom" value="' + (b.tom||c.tom||'') + '" placeholder="Ex: Profissional, descontraído, autoritativo..."></div>'
+    + '<div class="fg"><label class="fl">Público-alvo</label>'
+    + '<input class="fi" id="bf-publico" value="' + (b.publico||c.publico||'') + '" placeholder="Idade, perfil, dores, desejos..."></div>'
+    + '<div class="fg"><label class="fl">Diferenciais da marca</label>'
+    + '<textarea class="fta" id="bf-diferenciais" rows="3" placeholder="O que torna esse cliente único...">' + (b.diferenciais||'') + '</textarea></div>'
+    + '<div class="fg"><label class="fl">Concorrentes principais</label>'
+    + '<input class="fi" id="bf-concorrentes" value="' + (b.concorrentes||'') + '" placeholder="@concorrente1, @concorrente2..."></div>'
+    + '<div class="fg"><label class="fl">Palavras-chave do nicho</label>'
+    + '<input class="fi" id="bf-keywords" value="' + (b.keywords||'') + '" placeholder="Ex: advocacia trabalhista, direitos do trabalhador..."></div>'
+    + '</div>';
+
+  // Section 1: Identidade Visual
+  html += '<div id="brief-sec-1" class="brief-sec" style="display:none">'
+    + '<div class="fg"><label class="fl">Paleta de cores</label>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">' + coresHtml + '</div>'
+    + '<div style="font-size:11px;color:var(--text3)">Clique nas cores para editar</div></div>'
+    + '<div class="fg"><label class="fl">Fontes / Tipografia</label>'
+    + '<input class="fi" id="bf-fontes" value="' + (b.fontes||'') + '" placeholder="Ex: Playfair Display (títulos), Inter (corpo)..."></div>'
+    + '<div class="fg"><label class="fl">Links de imagens de referência</label>'
+    + '<textarea class="fta" id="bf-imgs" rows="3" placeholder="Cole links de imagens, Pinterest, Drive...&#10;Um por linha">' + (b.imgs||'') + '</textarea></div>'
+    + '<div class="fg"><label class="fl">Links de vídeos de referência</label>'
+    + '<textarea class="fta" id="bf-videos" rows="3" placeholder="Cole links de YouTube, Drive, Vimeo...&#10;Um por linha">' + (b.videos||'') + '</textarea></div>'
+    + '<div class="fg"><label class="fl">Observações visuais</label>'
+    + '<textarea class="fta" id="bf-visual-obs" rows="2" placeholder="Estilo visual, o que evitar, referências...">' + (b.visual_obs||'') + '</textarea></div>'
+    + '</div>';
+
+  // Section 2: Prompt IA
+  html += '<div id="brief-sec-2" class="brief-sec" style="display:none">'
+    + '<div style="background:rgba(212,168,85,0.06);border:1px solid rgba(212,168,85,0.2);border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.6">'
+    + '💡 Este prompt será incluído na geração de Linha Editorial quando você marcar <strong style="color:var(--gold)">"Usar Briefing"</strong>.</div>'
+    + '<div class="fg"><label class="fl">Prompt personalizado para a IA</label>'
+    + '<textarea class="fta" id="bf-prompt-ia" rows="8" placeholder="Ex: Este cliente é um advogado trabalhista. Nunca use linguagem técnica. Sempre inclua CTA para WhatsApp. Priorize Reels educativos. Use emojis ⚖️ e 📄...">' + (b.prompt_ia||'') + '</textarea></div>'
+    + '<div class="fg"><label class="fl">Restrições / assuntos proibidos</label>'
+    + '<textarea class="fta" id="bf-restricoes" rows="3" placeholder="Ex: Nunca mencionar concorrentes pelo nome...">' + (b.restricoes||'') + '</textarea></div>'
+    + '</div>';
+
+  // Section 3: Documentos
+  html += '<div id="brief-sec-3" class="brief-sec" style="display:none">'
+    + '<div class="fg"><label class="fl">Links de Google Drive / Docs</label>'
+    + '<textarea class="fta" id="bf-drive-links" rows="4" placeholder="Cole os links do Drive aqui&#10;Um por linha&#10;Ex: https://docs.google.com/document/...">' + (b.drive_links||'') + '</textarea>'
+    + '<div style="font-size:11px;color:var(--text3);margin-top:4px">Use o conteúdo dos documentos como base para o Prompt IA acima</div></div>'
+    + '<div class="fg"><label class="fl">PDF / Documentos (até 3)</label>'
+    + '<div id="bf-pdf-list" style="margin-bottom:8px">' + pdfListHtml + '</div>'
+    + '<label style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg3);border:1px dashed var(--border2);border-radius:10px;cursor:pointer;font-size:12px;color:var(--text2)">'
+    + '<span>📎 Clique para anexar PDF</span>'
+    + '<input type="file" accept=".pdf" style="display:none" onchange="briefingUploadPDF(\"'+cid+'\",this)">'
+    + '</label></div>'
+    + '<div class="fg"><label class="fl">Notas internas</label>'
+    + '<textarea class="fta" id="bf-notas-docs" rows="3" placeholder="Observações sobre documentos, acesso...">' + (b.notas_docs||'') + '</textarea></div>'
+    + '</div>';
+
+  // Section 4: Campanhas
+  html += '<div id="brief-sec-4" class="brief-sec" style="display:none">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    + '<div style="font-size:13px;font-weight:600">Histórico de campanhas</div>'
+    + '<button class="btn btn-primary btn-sm" onclick="briefingAddCampanha(\"'+cid+'\')">+ Campanha</button></div>'
+    + '<div id="bf-campanhas-list">' + campHtml + '</div>'
+    + '</div>';
+
+  // Save button
+  html += '<div style="padding-top:4px;border-top:1px solid var(--border)">'
+    + '<button class="btn btn-primary" onclick="saveBriefing(\"'+cid+'\')">💾 Salvar Briefing</button>'
+    + '</div>';
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function switchBriefTab(btn, secId, clientId){
+  var parent = btn.parentElement;
+  parent.querySelectorAll('.brief-tab').forEach(function(t){
+    t.style.background='var(--bg3)'; t.style.color='var(--text2)'; t.style.border='1px solid var(--border2)';
+    t.classList.remove('active');
+  });
+  btn.style.background='var(--accent)'; btn.style.color='#fff'; btn.style.border='none';
+  btn.classList.add('active');
+  var container = document.getElementById('cd-briefing');
+  if(container) container.querySelectorAll('.brief-sec').forEach(function(s){ s.style.display='none'; });
+  var sec = document.getElementById(secId);
+  if(sec) sec.style.display='block';
+}
+
+async function saveBriefing(clientId){
+  function gv(id){ var el=document.getElementById(id); return el?el.value.trim():''; }
+  var clients = await dbGet('clients');
+  var c = clients.find(function(x){return x.id===clientId;})||{};
+  var existing = c.briefing||{};
+  var b = {
+    estrategia: gv('bf-estrategia'),
+    tom:        gv('bf-tom'),
+    publico:    gv('bf-publico'),
+    diferenciais: gv('bf-diferenciais'),
+    concorrentes: gv('bf-concorrentes'),
+    keywords:   gv('bf-keywords'),
+    fontes:     gv('bf-fontes'),
+    imgs:       gv('bf-imgs'),
+    videos:     gv('bf-videos'),
+    visual_obs: gv('bf-visual-obs'),
+    prompt_ia:  gv('bf-prompt-ia'),
+    restricoes: gv('bf-restricoes'),
+    drive_links:gv('bf-drive-links'),
+    notas_docs: gv('bf-notas-docs'),
+    cores:      existing.cores  || ['#c9845a','#d4a855','#0c0a0e','#ffffff','#1e1828'],
+    pdfs:       existing.pdfs   || [],
+    campanhas:  existing.campanhas || []
+  };
+  await dbUpdate('clients', clientId, {briefing: b});
+  toast('Briefing salvo! ✓','ok');
+}
+
+async function briefingUpdateCor(clientId, index, value){
+  var clients = await dbGet('clients');
+  var c = clients.find(function(x){return x.id===clientId;})||{};
+  var b = c.briefing||{};
+  var cores = b.cores||['#c9845a','#d4a855','#0c0a0e','#ffffff','#1e1828'];
+  cores[index] = value;
+  b.cores = cores;
+  await dbUpdate('clients', clientId, {briefing: b});
+}
+
+async function briefingUploadPDF(clientId, input){
+  var file = input.files[0];
+  if(!file) return;
+  if(file.size > 5*1024*1024){ toast('PDF muito grande (máx 5MB)','er'); return; }
+  var reader = new FileReader();
+  reader.onload = async function(e){
+    var clients = await dbGet('clients');
+    var c = clients.find(function(x){return x.id===clientId;})||{};
+    var b = c.briefing||{};
+    var pdfs = b.pdfs||[];
+    if(pdfs.length >= 3){ toast('Máximo 3 PDFs por cliente','er'); return; }
+    pdfs.push({name: file.name, size: (file.size/1024).toFixed(0)+'KB'});
+    b.pdfs = pdfs;
+    await dbUpdate('clients', clientId, {briefing: b});
+    toast('PDF registrado! ✓','ok');
+    openClientDetail(clientId);
+  };
+  reader.readAsDataURL(file);
+}
+
+async function briefingRemovePDF(clientId, name){
+  if(!confirm('Remover '+name+'?')) return;
+  var clients = await dbGet('clients');
+  var c = clients.find(function(x){return x.id===clientId;})||{};
+  var b = c.briefing||{};
+  b.pdfs = (b.pdfs||[]).filter(function(p){return p.name!==name;});
+  await dbUpdate('clients', clientId, {briefing: b});
+  toast('PDF removido','ok');
+  openClientDetail(clientId);
+}
+
+async function briefingAddCampanha(clientId){
+  var nome = prompt('Nome da campanha:');
+  if(!nome) return;
+  var periodo = prompt('Período (ex: Jan/2026):')||'';
+  var resultado = prompt('Resultado / aprendizado:')||'';
+  var clients = await dbGet('clients');
+  var c = clients.find(function(x){return x.id===clientId;})||{};
+  var b = c.briefing||{};
+  var campanhas = b.campanhas||[];
+  campanhas.unshift({nome:nome, periodo:periodo, resultado:resultado});
+  b.campanhas = campanhas;
+  await dbUpdate('clients', clientId, {briefing: b});
+  toast('Campanha registrada! ✓','ok');
+  openClientDetail(clientId);
+}
+
+async function briefingRemoveCampanha(clientId, index){
+  var clients = await dbGet('clients');
+  var c = clients.find(function(x){return x.id===clientId;})||{};
+  var b = c.briefing||{};
+  (b.campanhas||[]).splice(index, 1);
+  await dbUpdate('clients', clientId, {briefing: b});
+  toast('Campanha removida','ok');
+  openClientDetail(clientId);
+}
+
 async function saveEst(id){await dbUpdate('clients',id,{objetivo:document.getElementById('est-obj').value,publico:document.getElementById('est-pub').value,tom:document.getElementById('est-tom').value,estrategia:document.getElementById('est-notas').value});toast('Salvo!','ok');}
 async function openPostForClient(id){populateSelects();document.getElementById('np-client').value=id;openModal('modal-new-post');}
 async function openCobFor(id,ticket){populateSelects();document.getElementById('cob-client').value=id;document.getElementById('cob-val').value=ticket;openModal('modal-asaas-cob');}
@@ -4497,6 +4789,7 @@ function openGerarLinhaEditorial(){
       +'<div style="margin-bottom:16px"><label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:block;margin-bottom:6px">Tema / foco do mês (opcional)</label><input id="le-tema" class="fi" placeholder="Ex: Lançamento de produto, Dia das Mães, Black Friday..."></div>'
       +'<div style="margin-bottom:14px"><label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:block;margin-bottom:8px">Formatos</label><div style="display:flex;flex-wrap:wrap;gap:6px"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 10px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-fmt-reels" checked style="accent-color:var(--accent)"> 🎬 Reels</label><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 10px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-fmt-carrossel" checked style="accent-color:var(--accent)"> 🎠 Carrossel</label><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 10px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-fmt-feed" checked style="accent-color:var(--accent)"> 📸 Post Feed</label><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 10px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-fmt-stories" style="accent-color:var(--accent)"> 📱 Stories</label></div></div>'
       +'<div style="margin-bottom:16px"><label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:block;margin-bottom:8px">Dias de publicação</label><div style="display:flex;flex-wrap:wrap;gap:6px"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 11px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-seg" checked style="accent-color:var(--accent)"> Seg</label><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 11px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-ter" checked style="accent-color:var(--accent)"> Ter</label><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 11px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-qua" checked style="accent-color:var(--accent)"> Qua</label><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 11px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-qui" checked style="accent-color:var(--accent)"> Qui</label><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 11px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-sex" checked style="accent-color:var(--accent)"> Sex</label><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 11px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-sab" style="accent-color:var(--accent)"> Sáb</label><label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 11px;border-radius:9px;border:1px solid var(--border2);font-size:12px;font-weight:600"><input type="checkbox" id="le-dom" style="accent-color:var(--accent)"> Dom</label></div></div>'
+      +'<div style="margin-bottom:10px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;background:rgba(212,168,85,0.06);border:1px solid rgba(212,168,85,0.2);border-radius:10px"><input type="checkbox" id="le-usar-briefing" style="accent-color:var(--gold);width:16px;height:16px"><div><div style="font-size:12px;font-weight:700;color:var(--gold)">📋 Usar Briefing do cliente</div><div style="font-size:11px;color:var(--text3);margin-top:1px">Inclui estratégia, tom de voz e prompt personalizado da aba Briefing</div></div></label></div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px"><button onclick="gerarLinhaEditorialIA()" style="padding:11px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--gold));border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">✦ Gerar com IA</button><button onclick="gerarDatasManual()" style="padding:11px;border-radius:10px;background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">📅 Só criar datas</button></div>'
       +'<div id="le-datas-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"></div>'+'<div id="le-resultado" style="margin-top:8px"></div>'
       +'</div></div>';
@@ -4544,6 +4837,19 @@ async function gerarLinhaEditorialIA(){
   var clients=await dbGet('clients');
   var client=clients.find(function(c){return c.id===clientId;});
   if(!client){toast('Cliente não encontrado','er');return;}
+  // Check if briefing should be used
+  var usarBriefing = document.getElementById('le-usar-briefing') && document.getElementById('le-usar-briefing').checked;
+  var briefingCtx = '';
+  if(usarBriefing && client.briefing){
+    var b = client.briefing;
+    if(b.estrategia) briefingCtx += '\nEstratégia: '+b.estrategia;
+    if(b.tom) briefingCtx += '\nTom de voz: '+b.tom;
+    if(b.publico) briefingCtx += '\nPúblico: '+b.publico;
+    if(b.diferenciais) briefingCtx += '\nDiferenciais: '+b.diferenciais;
+    if(b.keywords) briefingCtx += '\nPalavras-chave: '+b.keywords;
+    if(b.restricoes) briefingCtx += '\nRestrições: '+b.restricoes;
+    if(b.prompt_ia) briefingCtx += '\n\nInstruções específicas: '+b.prompt_ia;
+  }
   var mesPartes=mesSel.split('-');var ano=parseInt(mesPartes[0]);var mes=parseInt(mesPartes[1]);
   var mesNome=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][mes-1];
   var diasNoMes=new Date(ano,mes,0).getDate();
@@ -4551,7 +4857,7 @@ async function gerarLinhaEditorialIA(){
   for(var d2=1;d2<=diasNoMes;d2++){var dow2=new Date(ano,mes-1,d2).getDay();if(diasSemana.indexOf(dow2)!==-1)availDates.push(d2);}
   resultado.innerHTML='<div style="padding:16px;background:rgba(212,168,85,0.08);border:1px solid rgba(212,168,85,0.2);border-radius:12px;font-size:13px;color:var(--gold);text-align:center">✦ Gerando '+qtd+' posts para '+mesNome+'...</div>';
   try{
-    var prompt='Você é especialista em marketing digital para Instagram. Crie uma linha editorial de '+qtd+' posts para "'+client.nome+'" (segmento: '+(client.seg||'geral')+', objetivo: '+(client.objetivo||'engajamento')+') para '+mesNome+' '+ano+'.'+(tema?' Tema: '+tema+'.':'')+' Formatos: '+fmts.join(', ')+'. Distribua pelos dias disponíveis: '+availDates.slice(0,qtd).join(',')+'. Retorne APENAS array JSON com objetos contendo: titulo (max 60 chars), descricao (legenda pronta max 200 chars com emoji e CTA), formato, dia (número do dia), objetivo (engajamento/alcance/conversao/relacionamento). Sem markdown.';
+    var prompt='Você é especialista em marketing digital para Instagram. Crie uma linha editorial de '+qtd+' posts para "'+client.nome+'" (segmento: '+(client.seg||'geral')+', objetivo: '+(client.objetivo||'engajamento')+') para '+mesNome+' '+ano+'.'+briefingCtx+(tema?' Tema: '+tema+'.':'')+' Formatos: '+fmts.join(', ')+'. Distribua pelos dias disponíveis: '+availDates.slice(0,qtd).join(',')+'. Retorne APENAS array JSON com objetos contendo: titulo (max 60 chars), descricao (legenda pronta max 200 chars com emoji e CTA), formato, dia (número do dia), objetivo (engajamento/alcance/conversao/relacionamento). Sem markdown.';
     var resp=await callClaude(prompt);
     if(!resp)throw new Error('API não respondeu. Configure sua chave Gemini em Configurações → IA.');
     if(!resp){throw new Error('API não respondeu. Verifique sua chave em Configurações.');}
