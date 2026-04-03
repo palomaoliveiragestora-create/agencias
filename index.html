@@ -3181,6 +3181,7 @@ async function renderUsersPanel(){const members=await dbGet('members');const TC=
     </div>
     <div style="display:flex;gap:6px">
       <button onclick="editarMembro('${m.id}')" style="padding:5px 12px;border-radius:8px;background:var(--bg4);border:1px solid var(--border2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font)">✏️ Editar</button>
+      <button onclick="resetarSenha('${m.id}','${m.nome}')" style="padding:5px 12px;border-radius:8px;background:rgba(201,132,90,0.1);border:1px solid rgba(201,132,90,0.3);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font)">🔑 Senha</button>
       <button class="btn btn-danger btn-xs" onclick="delMember('${m.id}')">×</button>
     </div>
   </div>`).join(''):'<div class="empty"><p>Sem usuários</p></div>';}
@@ -6084,6 +6085,48 @@ function mostrarPostsDia(day){
     +'</div></div>';
 
   modal.style.display = 'flex';
+}
+
+
+async function resetarSenha(id, nome){
+  var modal = document.getElementById('modal-reset-senha');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'modal-reset-senha';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1002;align-items:center;justify-content:center;padding:20px';
+    modal.addEventListener('click',function(e){if(e.target===modal)modal.style.display='none';});
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = '<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:400px">'
+    +'<div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">'
+    +'<div style="font-size:15px;font-weight:700">🔑 Resetar senha — '+nome+'</div>'
+    +'<button class="rs-close-btn" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:22px">×</button>'
+    +'</div>'
+    +'<div style="padding:20px;display:flex;flex-direction:column;gap:12px">'
+    +'<div><label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px">Nova senha</label>'
+    +'<input id="rs-senha1" type="password" class="fi" placeholder="Digite a nova senha"></div>'
+    +'<div><label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px">Confirmar senha</label>'
+    +'<input id="rs-senha2" type="password" class="fi" placeholder="Repita a nova senha"></div>'
+    +'</div>'
+    +'<div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px">'
+    +'<button id="rs-save-btn" style="flex:1;padding:10px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--gold));border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">🔑 Salvar nova senha</button>'
+    +'<button class="rs-close-btn" style="padding:10px 16px;border-radius:10px;background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:13px;cursor:pointer;font-family:var(--font)">Cancelar</button>'
+    +'</div></div>';
+
+  modal.style.display = 'flex';
+
+  // Wire save button
+  document.getElementById('rs-save-btn').addEventListener('click', async function(){
+    var s1 = (document.getElementById('rs-senha1')||{}).value||'';
+    var s2 = (document.getElementById('rs-senha2')||{}).value||'';
+    if(!s1){ toast('Digite a nova senha','er'); return; }
+    if(s1 !== s2){ toast('As senhas não coincidem','er'); return; }
+    if(s1.length < 4){ toast('Senha muito curta — mínimo 4 caracteres','er'); return; }
+    await dbUpdate('members', id, {senha: btoa(s1)});
+    document.getElementById('modal-reset-senha').style.display = 'none';
+    toast('Senha de '+nome+' atualizada! ✓','ok');
+  });
 }
 
 initPWA();
