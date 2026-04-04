@@ -2967,140 +2967,308 @@ async function addHist(id){const input=document.getElementById('hist-in');if(!in
 // BRIEFING DO CLIENTE
 // ================================================================
 
+
 function renderBriefingTab(c){
   var el = document.getElementById('cd-briefing');
   if(!el) return;
   var b = c.briefing || {};
-  var cores = b.cores || ['#c9845a','#d4a855','#0c0a0e','#ffffff','#1e1828'];
   var cid = c.id;
-
-  // Build color pickers
-  var coresHtml = '';
-  cores.forEach(function(cor, i){
-    var oc = 'briefingUpdateCor(\"'+cid+'\",'+i+',this.value)';
-    coresHtml += '<div style="position:relative;display:inline-block">'
-      + '<input type="color" value="' + cor + '" onchange="' + oc + '"'
-      + ' style="width:42px;height:42px;border:2px solid var(--border2);border-radius:10px;cursor:pointer;padding:2px;background:none">'
-      + '</div>';
-  });
-
-  // Tab buttons
-  var tabLabels = ['📋 Estratégia','🎨 Identidade Visual','🤖 Prompt IA','📄 Documentos','📈 Campanhas'];
-  var tabsHtml = '';
-  tabLabels.forEach(function(t, i){
-    var active = i === 0;
-    tabsHtml += '<div class="brief-tab' + (active?' active':'') + '"'
-      + ' data-sec="brief-sec-'+i+'" onclick="switchBriefTab(this)"'
-      + ' style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;'
-      + (active ? 'background:var(--accent);color:#fff;' : 'background:var(--bg3);color:var(--text2);border:1px solid var(--border2);')
-      + '">' + t + '</div>';
-  });
-
-  // PDF list
-  var pdfListHtml = '';
-  (b.pdfs||[]).forEach(function(p){
-    var rpf = 'briefingRemovePDF(\"'+cid+'\",\"'+p.name+'\")';
-    pdfListHtml += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border-radius:8px;margin-bottom:6px;font-size:12px">'
-      + '<span>📄 ' + p.name + '</span>'
-      + '<button onclick="' + rpf + '" style="margin-left:auto;background:none;border:none;color:var(--red);cursor:pointer;font-size:14px">×</button>'
-      + '</div>';
-  });
-
-  // Campanhas list
-  var campHtml = '';
+  var cores = b.cores || ['#c9845a','#d4a855','#0c0a0e','#ffffff','#1e1828'];
+  var prompts = b.prompts || [];
   var campanhas = b.campanhas || [];
-  if(!campanhas.length){
-    campHtml = '<div class="empty"><p>Nenhuma campanha registrada</p></div>';
+  var pdfs = b.pdfs || [];
+
+  // Tab buttons — data-sec only, NO clientId inline
+  var tabLabels = ['📋 Estratégia','🎨 Visual','🤖 Prompts','📄 Docs','📈 Campanhas'];
+  var tabsHtml = tabLabels.map(function(t, i){
+    return '<button type="button" class="brief-tab'+(i===0?' active':'')+'" data-sec="brief-sec-'+i+'"'
+      +' style="padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border2);'
+      +(i===0?'background:var(--accent);color:#fff;border-color:var(--accent);':'background:var(--bg3);color:var(--text2);')
+      +'">'+t+'</button>';
+  }).join('');
+
+  // Cores
+  var coresHtml = cores.map(function(cor, i){
+    return '<input type="color" value="'+cor+'" data-idx="'+i+'" class="bf-cor"'
+      +' style="width:40px;height:40px;border:2px solid var(--border2);border-radius:9px;cursor:pointer;padding:2px;background:none">';
+  }).join('');
+
+  // Prompts list
+  var promptsHtml = '';
+  if(!prompts.length){
+    promptsHtml = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px;border:1px dashed var(--border2);border-radius:10px">Nenhum prompt ainda. Clique em <strong style="color:var(--accent)">+ Novo</strong> para criar.</div>';
   } else {
-    campanhas.forEach(function(camp, i){
-      campHtml += '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">'
-        + '<div style="display:flex;justify-content:space-between;margin-bottom:6px">'
-        + '<div style="font-size:13px;font-weight:600">' + (camp.nome||'') + '</div>'
-        + '<div style="display:flex;gap:6px"><span style="font-size:11px;color:var(--text3)">' + (camp.periodo||'') + '</span>'
-        + '<button onclick="briefingRemoveCampanha(\"'+cid+'\",'+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px">×</button></div></div>'
-        + '<div style="font-size:12px;color:var(--text2);line-height:1.6">' + (camp.resultado||'') + '</div>'
-        + '</div>';
+    var CATCOL = {Educativo:'#60a5fa',Promocional:'#f59e0b',Engajamento:'#4ade80',Bastidores:'#a78bfa',Institucional:'#14b8a6',Sazonal:'#f472b6',Outro:'#94a3b8'};
+    promptsHtml = prompts.map(function(p, i){
+      var cc = CATCOL[p.categoria]||'#94a3b8';
+      return '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:8px">'
+        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+        +'<div style="font-size:13px;font-weight:700;flex:1">'+p.nome+'</div>'
+        +'<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:'+cc+'22;color:'+cc+';font-weight:700">'+p.categoria+'</span>'
+        +'<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:var(--bg4);color:var(--text2)">'+p.formato+'</span>'
+        +'<button type="button" data-pidx="'+i+'" class="bf-edit-p" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--text2);padding:2px 5px" title="Editar">✏️</button>'
+        +'<button type="button" data-pidx="'+i+'" class="bf-del-p" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--red);padding:2px 5px" title="Excluir">×</button>'
+        +'</div>'
+        +'<div style="font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap">'+p.texto+'</div>'
+        +'</div>';
+    }).join('');
+  }
+
+  // PDFs
+  var pdfsHtml = pdfs.map(function(p){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border-radius:8px;margin-bottom:6px;font-size:12px">'
+      +'<span>📄 '+p.name+'</span>'
+      +'<button type="button" data-pname="'+p.name.replace(/"/g,'&quot;')+'" class="bf-del-pdf" style="margin-left:auto;background:none;border:none;color:var(--red);cursor:pointer;font-size:16px">×</button>'
+      +'</div>';
+  }).join('');
+
+  // Campanhas
+  var campsHtml = !campanhas.length
+    ? '<div class="empty"><p>Nenhuma campanha registrada</p></div>'
+    : campanhas.map(function(camp, i){
+        return '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px">'
+          +'<div style="display:flex;justify-content:space-between;margin-bottom:6px">'
+          +'<div style="font-size:13px;font-weight:600">'+camp.nome+'</div>'
+          +'<div style="display:flex;gap:6px;align-items:center"><span style="font-size:11px;color:var(--text3)">'+camp.periodo+'</span>'
+          +'<button type="button" data-cidx="'+i+'" class="bf-del-camp" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px">×</button>'
+          +'</div></div>'
+          +'<div style="font-size:12px;color:var(--text2);line-height:1.6">'+camp.resultado+'</div>'
+          +'</div>';
+      }).join('');
+
+  // Build full HTML
+  var html = ''
+    +'<div id="bf-root" style="display:flex;flex-direction:column;gap:0">'
+    // Tabs
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;padding-bottom:16px;margin-bottom:4px;border-bottom:1px solid var(--border)">'+tabsHtml+'</div>'
+
+    // Sec 0: Estratégia
+    +'<div id="brief-sec-0" class="brief-sec" style="padding-top:16px">'
+    +'<div class="fg"><label class="fl">Estratégia geral</label><textarea class="fta" id="bf-estrategia" rows="4" placeholder="Estratégia de conteúdo, posicionamento e metas...">'+(b.estrategia||'')+'</textarea></div>'
+    +'<div class="fg"><label class="fl">Tom de voz</label><input class="fi" id="bf-tom" value="'+(b.tom||c.tom||'')+'" placeholder="Ex: Profissional, descontraído..."></div>'
+    +'<div class="fg"><label class="fl">Público-alvo</label><input class="fi" id="bf-publico" value="'+(b.publico||c.publico||'')+'" placeholder="Idade, perfil, dores, desejos..."></div>'
+    +'<div class="fg"><label class="fl">Diferenciais da marca</label><textarea class="fta" id="bf-diferenciais" rows="2" placeholder="O que torna esse cliente único...">'+(b.diferenciais||'')+'</textarea></div>'
+    +'<div class="fg"><label class="fl">Concorrentes principais</label><input class="fi" id="bf-concorrentes" value="'+(b.concorrentes||'')+'" placeholder="@concorrente1, @concorrente2..."></div>'
+    +'<div class="fg"><label class="fl">Palavras-chave</label><input class="fi" id="bf-keywords" value="'+(b.keywords||'')+'" placeholder="Ex: advocacia trabalhista..."></div>'
+    +'</div>'
+
+    // Sec 1: Visual
+    +'<div id="brief-sec-1" class="brief-sec" style="display:none;padding-top:16px">'
+    +'<div class="fg"><label class="fl">Paleta de cores</label>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">'+coresHtml+'</div>'
+    +'<div style="font-size:11px;color:var(--text3)">Clique nas cores para editar</div></div>'
+    +'<div class="fg"><label class="fl">Fontes / Tipografia</label><input class="fi" id="bf-fontes" value="'+(b.fontes||'')+'" placeholder="Playfair Display (títulos), Inter (corpo)..."></div>'
+    +'<div class="fg"><label class="fl">Links de imagens de referência</label><textarea class="fta" id="bf-imgs" rows="3" placeholder="Links de imagens, Pinterest, Drive...&#10;Um por linha">'+(b.imgs||'')+'</textarea></div>'
+    +'<div class="fg"><label class="fl">Links de vídeos de referência</label><textarea class="fta" id="bf-videos" rows="3" placeholder="Links de YouTube, Drive, Vimeo...&#10;Um por linha">'+(b.videos||'')+'</textarea></div>'
+    +'<div class="fg"><label class="fl">Observações visuais</label><textarea class="fta" id="bf-visual-obs" rows="2" placeholder="Estilo visual, o que evitar...">'+(b.visual_obs||'')+'</textarea></div>'
+    +'</div>'
+
+    // Sec 2: Prompts (biblioteca completa)
+    +'<div id="brief-sec-2" class="brief-sec" style="display:none;padding-top:16px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    +'<div><div style="font-size:13px;font-weight:700">🤖 Biblioteca de Prompts</div>'
+    +'<div style="font-size:11px;color:var(--text3);margin-top:2px">Crie prompts específicos por tipo de conteúdo — use na Linha Editorial</div></div>'
+    +'<button type="button" id="bf-new-p" class="btn btn-primary btn-sm">+ Novo Prompt</button>'
+    +'</div>'
+    +'<div id="bf-prompts-list">'+promptsHtml+'</div>'
+    +'</div>'
+
+    // Sec 3: Docs
+    +'<div id="brief-sec-3" class="brief-sec" style="display:none;padding-top:16px">'
+    +'<div class="fg"><label class="fl">Links de Google Drive / Docs</label>'
+    +'<textarea class="fta" id="bf-drive-links" rows="4" placeholder="Cole os links do Drive&#10;Um por linha">'+(b.drive_links||'')+'</textarea>'
+    +'<div style="font-size:11px;color:var(--text3);margin-top:4px">Use o conteúdo dos docs como base no Prompt IA</div></div>'
+    +'<div class="fg"><label class="fl">PDF / Documentos (até 3)</label>'
+    +'<div id="bf-pdf-list">'+pdfsHtml+'</div>'
+    +'<label style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg3);border:1px dashed var(--border2);border-radius:10px;cursor:pointer;font-size:12px;color:var(--text2);margin-top:6px">'
+    +'<span>📎 Clique para anexar PDF</span>'
+    +'<input type="file" accept=".pdf" id="bf-pdf-input" style="display:none"></label></div>'
+    +'<div class="fg"><label class="fl">Notas internas</label>'
+    +'<textarea class="fta" id="bf-notas-docs" rows="2" placeholder="Observações sobre documentos...">'+(b.notas_docs||'')+'</textarea></div>'
+    +'</div>'
+
+    // Sec 4: Campanhas
+    +'<div id="brief-sec-4" class="brief-sec" style="display:none;padding-top:16px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    +'<div style="font-size:13px;font-weight:600">Histórico de campanhas</div>'
+    +'<button type="button" id="bf-new-camp" class="btn btn-primary btn-sm">+ Campanha</button></div>'
+    +'<div id="bf-camp-list">'+campsHtml+'</div>'
+    +'</div>'
+
+    // Save
+    +'<div style="padding-top:16px;border-top:1px solid var(--border);margin-top:8px">'
+    +'<button type="button" id="bf-save" class="btn btn-primary">💾 Salvar Briefing</button>'
+    +'</div>'
+    +'</div>';
+
+  el.innerHTML = html;
+
+  // ── Wire ALL events via addEventListener — zero inline params ──
+  var root = document.getElementById('bf-root');
+  if(!root) return;
+
+  // Tabs
+  root.querySelectorAll('.brief-tab').forEach(function(btn){
+    btn.addEventListener('click', function(){ switchBriefTab(this); });
+  });
+
+  // Save
+  document.getElementById('bf-save').addEventListener('click', function(){ saveBriefing(cid); });
+
+  // New prompt
+  document.getElementById('bf-new-p').addEventListener('click', function(){ openPromptModal(cid, null); });
+
+  // Edit prompt
+  root.querySelectorAll('.bf-edit-p').forEach(function(btn){
+    btn.addEventListener('click', function(){ openPromptModal(cid, parseInt(this.dataset.pidx)); });
+  });
+
+  // Delete prompt
+  root.querySelectorAll('.bf-del-p').forEach(function(btn){
+    btn.addEventListener('click', function(){ briefingDeletePrompt(cid, parseInt(this.dataset.pidx)); });
+  });
+
+  // New campaign
+  document.getElementById('bf-new-camp').addEventListener('click', function(){ briefingAddCampanha(cid); });
+
+  // Delete campaign
+  root.querySelectorAll('.bf-del-camp').forEach(function(btn){
+    btn.addEventListener('click', function(){ briefingRemoveCampanha(cid, parseInt(this.dataset.cidx)); });
+  });
+
+  // Color inputs
+  root.querySelectorAll('.bf-cor').forEach(function(inp){
+    inp.addEventListener('change', function(){ briefingUpdateCor(cid, parseInt(this.dataset.idx), this.value); });
+  });
+
+  // PDF input
+  var pdfEl = document.getElementById('bf-pdf-input');
+  if(pdfEl) pdfEl.addEventListener('change', function(){ briefingUploadPDF(cid, this); });
+
+  // Delete PDF
+  root.querySelectorAll('.bf-del-pdf').forEach(function(btn){
+    btn.addEventListener('click', function(){ briefingRemovePDF(cid, this.dataset.pname); });
+  });
+}
+
+// ── Prompt modal (criar/editar) ─────────────────────────────────
+function openPromptModal(clientId, editIdx){
+  var modal = document.getElementById('modal-prompt');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'modal-prompt';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1002;align-items:center;justify-content:center;padding:20px';
+    document.body.appendChild(modal);
+  }
+  var CATS = ['Educativo','Promocional','Engajamento','Bastidores','Institucional','Sazonal','Outro'];
+  var FMTS = ['Reels','Carrossel','Post Feed','Stories','Todos'];
+  var title = editIdx !== null ? 'Editar Prompt' : 'Novo Prompt';
+
+  modal.innerHTML = ''
+    +'<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:18px;width:100%;max-width:540px;max-height:90vh;display:flex;flex-direction:column">'
+    +'<div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">'
+    +'<div style="font-size:16px;font-weight:800">🤖 '+title+'</div>'
+    +'<button type="button" id="pm-close" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:24px;line-height:1">×</button>'
+    +'</div>'
+    +'<div style="padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:14px">'
+    +'<div class="fg"><label class="fl">Nome do prompt *</label>'
+    +'<input class="fi" id="pm-nome" placeholder="Ex: Posts educativos, Promoção mensal, Bastidores..."></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
+    +'<div class="fg"><label class="fl">Categoria</label>'
+    +'<select class="fs" id="pm-cat">'+CATS.map(function(c){ return '<option>'+c+'</option>'; }).join('')+'</select></div>'
+    +'<div class="fg"><label class="fl">Formato preferido</label>'
+    +'<select class="fs" id="pm-fmt">'+FMTS.map(function(f){ return '<option>'+f+'</option>'; }).join('')+'</select></div>'
+    +'</div>'
+    +'<div class="fg"><label class="fl">Texto do prompt *</label>'
+    +'<textarea class="fta" id="pm-texto" rows="8" placeholder="Descreva como a IA deve criar conteúdo para este cliente neste formato...&#10;&#10;Ex: Crie posts educativos sobre direitos trabalhistas. Use linguagem simples. Sempre inclua CTA para WhatsApp. Prefira listas. Use ⚖️ e 📋."></textarea></div>'
+    +'</div>'
+    +'<div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">'
+    +'<button type="button" id="pm-cancel" class="btn btn-ghost">Cancelar</button>'
+    +'<button type="button" id="pm-save" class="btn btn-primary">💾 Salvar Prompt</button>'
+    +'</div></div>';
+
+  modal.style.display = 'flex';
+
+  // If editing, prefill
+  if(editIdx !== null){
+    dbGet('clients').then(function(clients){
+      var c2 = clients.find(function(x){ return x.id===clientId; })||{};
+      var p = (c2.briefing&&c2.briefing.prompts&&c2.briefing.prompts[editIdx])||{};
+      var nEl=document.getElementById('pm-nome');
+      var tEl=document.getElementById('pm-texto');
+      var cEl=document.getElementById('pm-cat');
+      var fEl=document.getElementById('pm-fmt');
+      if(nEl) nEl.value = p.nome||'';
+      if(tEl) tEl.value = p.texto||'';
+      if(cEl) cEl.value = p.categoria||'Outro';
+      if(fEl) fEl.value = p.formato||'Todos';
     });
   }
 
-  var html = '<div style="display:flex;flex-direction:column;gap:16px">';
+  function closeModal(){ modal.style.display='none'; }
+  document.getElementById('pm-close').addEventListener('click', closeModal);
+  document.getElementById('pm-cancel').addEventListener('click', closeModal);
+  modal.addEventListener('click', function(e){ if(e.target===modal) closeModal(); });
 
-  // Sub-tab nav
-  html += '<div style="display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:12px">'
-    + tabsHtml + '</div>';
-
-  // Section 0: Estratégia
-  html += '<div id="brief-sec-0" class="brief-sec">'
-    + '<div class="fg"><label class="fl">Estratégia geral</label>'
-    + '<textarea class="fta" id="bf-estrategia" rows="4" placeholder="Descreva a estratégia de conteúdo, posicionamento e metas...">' + (b.estrategia||'') + '</textarea></div>'
-    + '<div class="fg"><label class="fl">Tom de voz</label>'
-    + '<input class="fi" id="bf-tom" value="' + (b.tom||c.tom||'') + '" placeholder="Ex: Profissional, descontraído, autoritativo..."></div>'
-    + '<div class="fg"><label class="fl">Público-alvo</label>'
-    + '<input class="fi" id="bf-publico" value="' + (b.publico||c.publico||'') + '" placeholder="Idade, perfil, dores, desejos..."></div>'
-    + '<div class="fg"><label class="fl">Diferenciais da marca</label>'
-    + '<textarea class="fta" id="bf-diferenciais" rows="3" placeholder="O que torna esse cliente único...">' + (b.diferenciais||'') + '</textarea></div>'
-    + '<div class="fg"><label class="fl">Concorrentes principais</label>'
-    + '<input class="fi" id="bf-concorrentes" value="' + (b.concorrentes||'') + '" placeholder="@concorrente1, @concorrente2..."></div>'
-    + '<div class="fg"><label class="fl">Palavras-chave do nicho</label>'
-    + '<input class="fi" id="bf-keywords" value="' + (b.keywords||'') + '" placeholder="Ex: advocacia trabalhista, direitos do trabalhador..."></div>'
-    + '</div>';
-
-  // Section 1: Identidade Visual
-  html += '<div id="brief-sec-1" class="brief-sec" style="display:none">'
-    + '<div class="fg"><label class="fl">Paleta de cores</label>'
-    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">' + coresHtml + '</div>'
-    + '<div style="font-size:11px;color:var(--text3)">Clique nas cores para editar</div></div>'
-    + '<div class="fg"><label class="fl">Fontes / Tipografia</label>'
-    + '<input class="fi" id="bf-fontes" value="' + (b.fontes||'') + '" placeholder="Ex: Playfair Display (títulos), Inter (corpo)..."></div>'
-    + '<div class="fg"><label class="fl">Links de imagens de referência</label>'
-    + '<textarea class="fta" id="bf-imgs" rows="3" placeholder="Cole links de imagens, Pinterest, Drive...&#10;Um por linha">' + (b.imgs||'') + '</textarea></div>'
-    + '<div class="fg"><label class="fl">Links de vídeos de referência</label>'
-    + '<textarea class="fta" id="bf-videos" rows="3" placeholder="Cole links de YouTube, Drive, Vimeo...&#10;Um por linha">' + (b.videos||'') + '</textarea></div>'
-    + '<div class="fg"><label class="fl">Observações visuais</label>'
-    + '<textarea class="fta" id="bf-visual-obs" rows="2" placeholder="Estilo visual, o que evitar, referências...">' + (b.visual_obs||'') + '</textarea></div>'
-    + '</div>';
-
-  // Section 2: Prompt IA
-  html += '<div id="brief-sec-2" class="brief-sec" style="display:none">'
-    + '<div style="background:rgba(212,168,85,0.06);border:1px solid rgba(212,168,85,0.2);border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.6">'
-    + '💡 Este prompt será incluído na geração de Linha Editorial quando você marcar <strong style="color:var(--gold)">"Usar Briefing"</strong>.</div>'
-    + '<div class="fg"><label class="fl">Prompt personalizado para a IA</label>'
-    + '<textarea class="fta" id="bf-prompt-ia" rows="8" placeholder="Ex: Este cliente é um advogado trabalhista. Nunca use linguagem técnica. Sempre inclua CTA para WhatsApp. Priorize Reels educativos. Use emojis ⚖️ e 📄...">' + (b.prompt_ia||'') + '</textarea></div>'
-    + '<div class="fg"><label class="fl">Restrições / assuntos proibidos</label>'
-    + '<textarea class="fta" id="bf-restricoes" rows="3" placeholder="Ex: Nunca mencionar concorrentes pelo nome...">' + (b.restricoes||'') + '</textarea></div>'
-    + '</div>';
-
-  // Section 3: Documentos
-  html += '<div id="brief-sec-3" class="brief-sec" style="display:none">'
-    + '<div class="fg"><label class="fl">Links de Google Drive / Docs</label>'
-    + '<textarea class="fta" id="bf-drive-links" rows="4" placeholder="Cole os links do Drive aqui&#10;Um por linha&#10;Ex: https://docs.google.com/document/...">' + (b.drive_links||'') + '</textarea>'
-    + '<div style="font-size:11px;color:var(--text3);margin-top:4px">Use o conteúdo dos documentos como base para o Prompt IA acima</div></div>'
-    + '<div class="fg"><label class="fl">PDF / Documentos (até 3)</label>'
-    + '<div id="bf-pdf-list" style="margin-bottom:8px">' + pdfListHtml + '</div>'
-    + '<label style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg3);border:1px dashed var(--border2);border-radius:10px;cursor:pointer;font-size:12px;color:var(--text2)">'
-    + '<span>📎 Clique para anexar PDF</span>'
-    + '<input type="file" accept=".pdf" style="display:none" onchange="briefingUploadPDF(\"'+cid+'\",this)">'
-    + '</label></div>'
-    + '<div class="fg"><label class="fl">Notas internas</label>'
-    + '<textarea class="fta" id="bf-notas-docs" rows="3" placeholder="Observações sobre documentos, acesso...">' + (b.notas_docs||'') + '</textarea></div>'
-    + '</div>';
-
-  // Section 4: Campanhas
-  html += '<div id="brief-sec-4" class="brief-sec" style="display:none">'
-    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
-    + '<div style="font-size:13px;font-weight:600">Histórico de campanhas</div>'
-    + '<button class="btn btn-primary btn-sm" onclick="briefingAddCampanha(\"'+cid+'\')">+ Campanha</button></div>'
-    + '<div id="bf-campanhas-list">' + campHtml + '</div>'
-    + '</div>';
-
-  // Save button
-  html += '<div style="padding-top:4px;border-top:1px solid var(--border)">'
-    + '<button class="btn btn-primary" onclick="saveBriefing(\"'+cid+'\')">💾 Salvar Briefing</button>'
-    + '</div>';
-
-  html += '</div>';
-  el.innerHTML = html;
+  document.getElementById('pm-save').addEventListener('click', async function(){
+    var nome = (document.getElementById('pm-nome').value||'').trim();
+    var texto = (document.getElementById('pm-texto').value||'').trim();
+    var cat = document.getElementById('pm-cat').value;
+    var fmt = document.getElementById('pm-fmt').value;
+    if(!nome){ toast('Dê um nome ao prompt','er'); return; }
+    if(!texto){ toast('Escreva o texto do prompt','er'); return; }
+    var clients = await dbGet('clients');
+    var c2 = clients.find(function(x){ return x.id===clientId; })||{};
+    var b2 = c2.briefing||{};
+    var prompts2 = b2.prompts||[];
+    var entry = {nome:nome, texto:texto, categoria:cat, formato:fmt};
+    if(editIdx !== null){ prompts2[editIdx] = entry; } else { prompts2.push(entry); }
+    b2.prompts = prompts2;
+    await dbUpdate('clients', clientId, {briefing: b2});
+    toast((editIdx!==null?'Prompt atualizado':'Prompt criado')+' ✓','ok');
+    closeModal();
+    openClientDetail(clientId);
+    setTimeout(function(){
+      document.querySelectorAll('.ti').forEach(function(t){
+        if(t.getAttribute('onclick')&&t.getAttribute('onclick').indexOf('cd-briefing')!==-1) t.click();
+      });
+      setTimeout(function(){
+        var btn = document.querySelector('.brief-tab[data-sec="brief-sec-2"]');
+        if(btn) btn.click();
+      }, 300);
+    }, 500);
+  });
 }
+
+// ── saveBriefing ────────────────────────────────────────────────
+async function saveBriefing(clientId){
+  function gv(id){ var el=document.getElementById(id); return el?el.value.trim():''; }
+  var clients = await dbGet('clients');
+  var c = clients.find(function(x){ return x.id===clientId; })||{};
+  var ex = c.briefing||{};
+  var b = {
+    estrategia:  gv('bf-estrategia'),
+    tom:         gv('bf-tom'),
+    publico:     gv('bf-publico'),
+    diferenciais:gv('bf-diferenciais'),
+    concorrentes:gv('bf-concorrentes'),
+    keywords:    gv('bf-keywords'),
+    fontes:      gv('bf-fontes'),
+    imgs:        gv('bf-imgs'),
+    videos:      gv('bf-videos'),
+    visual_obs:  gv('bf-visual-obs'),
+    drive_links: gv('bf-drive-links'),
+    notas_docs:  gv('bf-notas-docs'),
+    cores:       ex.cores     ||['#c9845a','#d4a855','#0c0a0e','#ffffff','#1e1828'],
+    pdfs:        ex.pdfs      ||[],
+    campanhas:   ex.campanhas ||[],
+    prompts:     ex.prompts   ||[]
+  };
+  await dbUpdate('clients', clientId, {briefing: b});
+  toast('Briefing salvo! ✓','ok');
+}
+
+
 
 function switchBriefTab(btn){
   var secId = btn.getAttribute('data-sec');
