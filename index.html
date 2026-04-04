@@ -6261,14 +6261,6 @@ async function renderFunilDashboard(){
   });
   html += '</div></div>';
 
-  // Add quick note input at bottom
-  html += '<div style="margin-top:20px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px">';
-  html += '<div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">📝 Registrar nota</div>';
-  html += '<div style="display:flex;gap:8px">';
-  html += '<input class="fi" id="hist-in" placeholder="Ex: Cliente solicitou pausa, reunião realizada..." style="flex:1">';
-  html += '<button class="btn btn-primary btn-sm" onclick="addHist(\"'+clientId+'\")">Registrar</button>';
-  html += '</div></div>';
-
   el.innerHTML = html;
 }
 
@@ -6574,7 +6566,19 @@ async function renderHistoricoAprovacoes(clientId){
     html += '</div>';
   }
 
+  // Add quick note input at bottom
+  html += '<div style="margin-top:20px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px">';
+  html += '<div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">📝 Registrar nota</div>';
+  html += '<div style="display:flex;gap:8px">';
+  html += '<input class="fi" id="hist-in" placeholder="Ex: Cliente solicitou pausa, reunião realizada..." style="flex:1">';
+  html += '<button class="btn btn-primary btn-sm" id="hist-save-btn">Registrar</button>';
+  html += '</div></div>';
+
   el.innerHTML = html;
+
+  // Wire save button
+  var histBtn = document.getElementById('hist-save-btn');
+  if(histBtn) histBtn.addEventListener('click', function(){ addHist(clientId); });
 }
 
 
