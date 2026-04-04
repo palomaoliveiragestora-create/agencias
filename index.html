@@ -2970,9 +2970,21 @@ async function buildClientTabs(c){
   var iaPrompts = (c.briefing&&c.briefing.prompts)||[];
   var iaPromptOpts = '<option value="">— Sem prompt específico —</option>'
     + iaPrompts.map(function(p,i){ return '<option value="'+i+'">'+p.nome+' ('+p.categoria+' · '+p.formato+')</option>'; }).join('');
-  document.getElementById('cd-ia').innerHTML=`<div class="ai-panel"><div class="ai-panel-title">IA — Geração de legendas</div>`
-    + (iaPrompts.length ? `<div class="fg"><label class="fl">Usar prompt da biblioteca</label><select class="fs" id="ai-prompt-sel" onchange="iaApplyPrompt('${c.id}',this.value)">${iaPromptOpts}</select></div>` : '')
-    + `<div class="fg"><label class="fl">Tema</label><input class="fi" id="ai-tema" placeholder="Ex: promoção de verão..."></div><div class="fg"><label class="fl">Tom de voz</label><input class="fi" id="ai-tom" value="${c.tom||''}" placeholder="profissional, descontraído..."></div><div style="display:flex;gap:8px;margin-top:4px"><button class="btn btn-ai btn-sm" onclick="gerarLegenda('${c.nome}')">✦ Gerar legenda</button><button class="btn btn-ai btn-sm" onclick="gerarHashtags('${c.nome}','${c.seg||''}')">✦ Hashtags</button></div><div class="ai-loading" id="ai-loading">✦ Gerando...</div><div class="ai-result" id="ai-result"></div></div>`;
+  var iaPromptSel = iaPrompts.length
+    ? '<div class="fg"><label class="fl">Usar prompt da biblioteca</label><select class="fs" id="ai-prompt-sel" onchange="iaApplyPrompt(\''+c.id+'\',this.value)">'+iaPromptOpts+'</select></div>'
+    : '';
+  document.getElementById('cd-ia').innerHTML = '<div class="ai-panel">'
+    + '<div class="ai-panel-title">IA — Geração de legendas</div>'
+    + iaPromptSel
+    + '<div class="fg"><label class="fl">Tema</label><input class="fi" id="ai-tema" placeholder="Ex: promoção de verão..."></div>'
+    + '<div class="fg"><label class="fl">Tom de voz</label><input class="fi" id="ai-tom" value="'+(c.tom||'')+'" placeholder="profissional, descontraído..."></div>'
+    + '<div style="display:flex;gap:8px;margin-top:4px">'
+    + '<button class="btn btn-ai btn-sm" onclick="gerarLegenda(\''+c.nome+'\')">✦ Gerar legenda</button>'
+    + '<button class="btn btn-ai btn-sm" onclick="gerarHashtags(\''+c.nome+'\',\''+( c.seg||'')+'\')" >✦ Hashtags</button>'
+    + '</div>'
+    + '<div class="ai-loading" id="ai-loading">✦ Gerando...</div>'
+    + '<div class="ai-result" id="ai-result"></div>'
+    + '</div>';
 
   const pendP=posts.filter(p=>p.stage==='aguardando');
   const apLink=genApLink(c.id);
